@@ -11,6 +11,7 @@ import lombok.Data;
 public class User {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
     @Column(nullable = false, length = 50)
@@ -27,6 +28,13 @@ public class User {
 
     public User(Integer  id, String login, String password, String email) {
         this.id = id;
+        this.login = login;
+        this.password = password;
+        this.email = email;
+        this.isDeleted = false;
+    }
+
+    public User(String login, String password, String email) {
         this.login = login;
         this.password = password;
         this.email = email;
