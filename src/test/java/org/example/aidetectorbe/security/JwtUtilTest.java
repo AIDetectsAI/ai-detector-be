@@ -24,7 +24,7 @@ public class JwtUtilTest {
         String token = jwtUtil.generateToken(login);
         //Then
         assertThat(token).isNotNull().isNotEmpty();
-        assertThat(token.split("\\.")).hasSize(3); // JWT has 3 parts
+        assertThat(token.split("\\.")).hasSize(3);
     }
 
     @Test
@@ -101,7 +101,6 @@ public class JwtUtilTest {
         //Given
         JwtUtil shortExpirationJwtUtil = new JwtUtil();
         shortExpirationJwtUtil.setJwtSecretKey("99327f738b5a440eafe816a57260c0b1f1a121f0f2217b6a201838b36da2d524");
-        // Set a very short expiration (1 millisecond)
         java.lang.reflect.Field expirationField;
         try {
             expirationField = JwtUtil.class.getDeclaredField("jwtExpirationMs");
@@ -170,7 +169,6 @@ public class JwtUtilTest {
         //Given
         JwtUtil shortExpirationJwtUtil = new JwtUtil();
         shortExpirationJwtUtil.setJwtSecretKey("99327f738b5a440eafe816a57260c0b1f1a121f0f2217b6a201838b36da2d524");
-        // Set a very short expiration (1 millisecond)
         java.lang.reflect.Field expirationField;
         try {
             expirationField = JwtUtil.class.getDeclaredField("jwtExpirationMs");
@@ -237,7 +235,6 @@ public class JwtUtilTest {
     @Test
     public void testValidateToken_WithInvalidSignature_ShouldThrowException() {
         String token = jwtUtil.generateToken("testUser");
-        // Modify the token to corrupt the signature
         String corruptedToken = token.substring(0, token.length() - 5) + "xxxxx";
         //When
         try {
