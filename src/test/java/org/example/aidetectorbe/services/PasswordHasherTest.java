@@ -1,15 +1,23 @@
 package org.example.aidetectorbe.services;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class PasswordHasherTest {
 
+    private PasswordHasher passwordHasher;
+
+    @BeforeEach
+    void setUp() {
+        passwordHasher = new PasswordHasher();
+    }
+
     @Test
     void hashPassword_shouldReturnHashedString() {
         String password = "testPassword123";
-        String hashed = PasswordHasher.hashPassword(password);
+        String hashed = passwordHasher.hashPassword(password);
 
         assertNotNull(hashed, "Hashed password should not be null");
         assertNotEquals(password, hashed, "Hashed password should not equal the original password");
@@ -18,41 +26,51 @@ class PasswordHasherTest {
     @Test
     void hashPassword_shouldReturnDifferentHashesForSamePassword() {
         String password = "testPassword123";
-        String hashed1 = PasswordHasher.hashPassword(password);
-        String hashed2 = PasswordHasher.hashPassword(password);
+        String hashed1 = passwordHasher.hashPassword(password);
+        String hashed2 = passwordHasher.hashPassword(password);
 
+        assertNotNull(hashed1);
+        assertNotNull(hashed2);
         assertNotEquals(hashed1, hashed2, "Hashing the same password should produce different hashes");
     }
 
     @Test
-    void hashPassword_shouldThrowExceptionForNullPassword() {
-        String hashed = PasswordHasher.hashPassword(null);
+    void hashPassword_shouldReturnNullForNullPassword() {
+        String hashed = passwordHasher.hashPassword(null);
         assertNull(hashed, "Hashing a null password should return null");
     }
 
     @Test
     void verifyPassword_shouldReturnTrueForCorrectPassword() {
         String password = "correctPassword";
-        String hashed = PasswordHasher.hashPassword(password);
+        String hashed = passwordHasher.hashPassword(password);
 
-        assertTrue(PasswordHasher.verifyPassword(password, hashed), "Verification should succeed for correct password");
+        assertTrue(passwordHasher.verifyPassword(password, hashed), "Verification should succeed for correct password");
     }
 
     @Test
     void verifyPassword_shouldReturnFalseForIncorrectPassword() {
         String password = "correctPassword";
         String wrongPassword = "wrongPassword";
-        String hashed = PasswordHasher.hashPassword(password);
+        String hashed = passwordHasher.hashPassword(password);
 
-        assertFalse(PasswordHasher.verifyPassword(wrongPassword, hashed), "Verification should fail for incorrect password");
+        assertFalse(passwordHasher.verifyPassword(wrongPassword, hashed), "Verification should fail for incorrect password");
     }
 
     @Test
     void verifyPassword_shouldReturnFalseForNullOrEmptyPassword() {
         String password = "somePassword";
-        String hashed = PasswordHasher.hashPassword(password);
+        String hashed = passwordHasher.hashPassword(password);
 
-        assertFalse(PasswordHasher.verifyPassword(null, hashed), "Verification should fail for null password");
-        assertFalse(PasswordHasher.verifyPassword("", hashed), "Verification should fail for empty password");
+        assertFalse(passwordHasher.verifyPassword(null, hashed), "Verification should fail for null password");
+        assertFalse(passwordHasher.verifyPassword("", hashed), "Verification should fail for empty password");
+    }
+
+    @Test
+    void verifyPassword_shouldReturnFalseForNullOrEmptyHash() {
+        String password = "somePassword";
+
+        assertFalse(passwordHasher.verifyPassword(password, null), "Verification should fail for null hash");
+        assertFalse(passwordHasher.verifyPassword(password, ""), "Verification should fail for empty hash");
     }
 }
