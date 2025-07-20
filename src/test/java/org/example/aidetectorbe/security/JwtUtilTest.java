@@ -35,7 +35,7 @@ public class JwtUtilTest {
         String token = jwtUtil.generateToken(login);
         //Then
         assertThat(token).isNotNull().isNotEmpty();
-        assertThat(token.split("\\.")).hasSize(3); // JWT has 3 parts
+        assertThat(token.split("\\.")).hasSize(3);
     }
 
     @Test
@@ -46,7 +46,7 @@ public class JwtUtilTest {
         String token = jwtUtil.generateToken(login);
         //Then
         assertThat(token).isNotNull().isNotEmpty();
-        assertThat(token.split("\\.")).hasSize(3); // JWT has 3 parts
+        assertThat(token.split("\\.")).hasSize(3);
     }
 
     @Test
@@ -57,7 +57,7 @@ public class JwtUtilTest {
         String token = jwtUtil.generateToken(login);
         //Then
         assertThat(token).isNotNull().isNotEmpty();
-        assertThat(token.split("\\.")).hasSize(3); // JWT has 3 parts
+        assertThat(token.split("\\.")).hasSize(3);
     }
 
     @Test
@@ -79,7 +79,7 @@ public class JwtUtilTest {
         //When
         String extractedLogin = jwtUtil.extractLogin(token);
         //Then
-        assertThat(extractedLogin).isEqualTo(login); // Should return the exact login as stored
+        assertThat(extractedLogin).isEqualTo(login);
     }
 
     @Test
@@ -98,7 +98,7 @@ public class JwtUtilTest {
 
     @Test
     public void testExtractLogin_GivenExpiredToken_ShouldThrowException() throws InterruptedException {
-        //Given - create a JwtUtil with very short expiration for testing
+        //Given
         JwtUtil shortExpirationJwtUtil = new JwtUtil();
         shortExpirationJwtUtil.setJwtSecretKey("99327f738b5a440eafe816a57260c0b1f1a121f0f2217b6a201838b36da2d524");
         // Set a very short expiration (1 millisecond)
@@ -114,7 +114,6 @@ public class JwtUtilTest {
         
         String token = shortExpirationJwtUtil.generateToken("testUser");
         
-        // Wait for token to expire
         Thread.sleep(10);
         
         //When
@@ -168,7 +167,7 @@ public class JwtUtilTest {
 
     @Test
     public void testValidateToken_GivenExpiredToken_ShouldThrowException() throws InterruptedException {
-        //Given - create a JwtUtil with very short expiration for testing
+        //Given
         JwtUtil shortExpirationJwtUtil = new JwtUtil();
         shortExpirationJwtUtil.setJwtSecretKey("99327f738b5a440eafe816a57260c0b1f1a121f0f2217b6a201838b36da2d524");
         // Set a very short expiration (1 millisecond)
@@ -184,7 +183,6 @@ public class JwtUtilTest {
         
         String token = shortExpirationJwtUtil.generateToken("testUser");
         
-        // Wait for token to expire
         Thread.sleep(10);
         
         //When
@@ -254,20 +252,16 @@ public class JwtUtilTest {
     @Test
     public void testTokenWorkflow_GenerateExtractValidate_ShouldWorkTogether() {
         String login = "integrationTestUser";
-        // Generate token
         String token = jwtUtil.generateToken(login);
         assertThat(token).isNotNull();
-        // Extract login
         String extractedLogin = jwtUtil.extractLogin(token);
         assertThat(extractedLogin).isEqualTo(login);
-        // Validate token
         boolean isValid = jwtUtil.validateToken(token);
         assertThat(isValid).isTrue();
     }
 
     @Test
     public void testTokenSecurity_DifferentInstance_ShouldThrowException() {
-        // Test that tokens created with different secret keys fail validation
         JwtUtil anotherJwtUtil = new JwtUtil();
         anotherJwtUtil.setJwtSecretKey("anotherSecretKeyThatIsAtLeast32CharactersLongForHS256Algorithm");
         anotherJwtUtil.init();

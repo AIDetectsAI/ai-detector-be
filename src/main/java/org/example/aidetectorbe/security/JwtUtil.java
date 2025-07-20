@@ -22,7 +22,7 @@ public class JwtUtil {
     public void init() {
         this.secretKey = Keys.hmacShaKeyFor(jwtSecretKey.getBytes(StandardCharsets.UTF_8));
     }
-    //Token generation
+
     public String generateToken(String login) {
         Log.info("Generating JWT token for login: " + login);
         return Jwts.builder()
