@@ -22,16 +22,16 @@ public class JwtUtil {
         this.secretKey = Keys.hmacShaKeyFor(jwtSecretKey.getBytes(StandardCharsets.UTF_8));
     }
     //Token generation
-    public String generateToken(String username) {
+    public String generateToken(String login) {
         return Jwts.builder()
-                .setSubject(username)
+                .setSubject(login)
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + jwtExpirationMs))
                 .signWith(secretKey, SignatureAlgorithm.HS256)
                 .compact();
     }
 
-    public String extractUsername(String token) {
+    public String extractLogin(String token) {
         return Jwts.parserBuilder()
                 .setSigningKey(secretKey)
                 .build()
