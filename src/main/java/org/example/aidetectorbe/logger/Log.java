@@ -11,7 +11,7 @@ public class Log {
         logger.info(message);
     }
 
-    public static void error(String message) {
+    public static void error(String message, NullPointerException e) {
         logger.error(message);
     }
 }

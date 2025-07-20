@@ -25,13 +25,18 @@ class PasswordHasherTest {
     }
 
     @Test
+    void hashPassword_shouldThrowExceptionForNullPassword() {
+        String hashed = PasswordHasher.hashPassword(null);
+        assertNull(hashed, "Hashing a null password should return null");
+    }
+
+    @Test
     void verifyPassword_shouldReturnTrueForCorrectPassword() {
         String password = "correctPassword";
         String hashed = PasswordHasher.hashPassword(password);
 
         assertTrue(PasswordHasher.verifyPassword(password, hashed), "Verification should succeed for correct password");
     }
-
 
     @Test
     void verifyPassword_shouldReturnFalseForIncorrectPassword() {
