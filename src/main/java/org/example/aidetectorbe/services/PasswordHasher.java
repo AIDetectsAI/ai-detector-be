@@ -11,7 +11,7 @@ public class PasswordHasher {
         try {
             return argon2.hash(2, 65536, 1, password.toCharArray());
         } catch (NullPointerException e) {
-            Log.error("Password is null and cannot be hashed.", e);
+            Log.error("Password is null and cannot be hashed.");
             return null;
         }
     }
