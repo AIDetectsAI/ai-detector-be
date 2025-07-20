@@ -14,4 +14,8 @@ public class Log {
     public static void error(String message, NullPointerException e) {
         logger.error(message);
     }
+
+    private Log() {
+        // Private constructor to prevent instantiation
+    }
 }
