@@ -32,7 +32,7 @@ public class JwtUtil {
                 .compact();
     }
 
-    public String extractLogin(String token) {
+    public String extractLogin(String token)  throws JwtException {
         try {
             Log.info("Extracting login from JWT token");
             return Jwts.parserBuilder()
@@ -51,7 +51,7 @@ public class JwtUtil {
         return null;
     }
 
-    public boolean validateToken(String token) {
+    public boolean validateToken(String token) throws JwtException {
         try {
             Jwts.parserBuilder()
                     .setSigningKey(secretKey)
@@ -65,11 +65,15 @@ public class JwtUtil {
             Log.error("Invalid JWT token: " + e.getMessage());
         } catch (ExpiredJwtException e) {
             Log.error("JWT token is expired: " + e.getMessage());
-        } catch (UnsupportedJwtException e) {
-            Log.error("JWT token is unsupported: " + e.getMessage());
         } catch (IllegalArgumentException e) {
             Log.error("JWT claims string is empty: " + e.getMessage());
         }
         return false;
+    }
+
+    public void setJwtSecretKey(String jwtSecretKey) {
+        this.jwtSecretKey = jwtSecretKey;
+        this.secretKey = Keys.hmacShaKeyFor(jwtSecretKey.getBytes(StandardCharsets.UTF_8));
+        Log.info("JWT secret key has been set");
     }
 }

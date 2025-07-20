@@ -1,10 +1,13 @@
 package org.example.aidetectorbe.security;
 import org.junit.jupiter.api.Test;
+import org.mockito.MockedStatic;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.beans.factory.annotation.Value;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mockStatic;
+
 import io.jsonwebtoken.MalformedJwtException;
 import io.jsonwebtoken.ExpiredJwtException;
 
@@ -104,21 +107,23 @@ public class JwtUtilTest {
     @Test
     public void testExtractLogin_GivenExpiredToken_ShouldThrowException() {
         //Given
-        String login = "testUser";
-        String token = jwtUtil.generateToken(login);
-        //Simulate expiration by waiting longer than the expiration time
-        try {
-            Thread.sleep(jwtExpiration + 1000);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        }
-        //When
-        try {
-            jwtUtil.extractLogin(token);
-        } catch (Exception e) {
-            //Then
-            assertThat(e).isInstanceOf(ExpiredJwtException.class);
-            assertThat(e.getMessage()).contains("JWT token is expired");
+        try (MockedStatic<System> mockedSystem = mockStatic(System.class)) {
+            long currentTime = System.currentTimeMillis();
+            mockedSystem.when(System::currentTimeMillis).thenReturn(currentTime);
+        
+            String token = jwtUtil.generateToken("testUser");
+        
+            // Fast forward time beyond expiration
+            mockedSystem.when(System::currentTimeMillis)
+                  .thenReturn(currentTime + jwtExpiration + 1000);
+            //When
+            try {
+                jwtUtil.extractLogin(token);
+            } catch (Exception e) {
+                //Then
+                assertThat(e).isInstanceOf(ExpiredJwtException.class);
+                assertThat(e.getMessage()).contains("JWT token is expired");
+            }
         }
     }
 
@@ -133,6 +138,138 @@ public class JwtUtilTest {
             //Then
             assertThat(e).isInstanceOf(IllegalArgumentException.class);
             assertThat(e.getMessage()).contains("JWT claims string is empty");
+        }
+    }
+
+    @Test
+    public void testValidateToken_GivenValidToken_ShouldReturnTrue() {
+        //Given
+        String login = "testUser";
+        String token = jwtUtil.generateToken(login);
+        //When
+        boolean isValid = jwtUtil.validateToken(token);
+        //Then
+        assertThat(isValid).isTrue();
+    }
+
+    @Test
+    public void testValidateToken_GivenInvalidToken_ShouldThrowException() {
+        //Given
+        String invalidToken = "invalidToken";
+        //When
+        try {
+            jwtUtil.validateToken(invalidToken);
+        } catch (Exception e) {
+            //Then
+            assertThat(e).isInstanceOf(MalformedJwtException.class);
+            assertThat(e.getMessage()).contains("Invalid JWT token");
+        }
+    }
+
+    @Test
+    public void testValidateToken_GivenExpiredToken_ShouldThrowException() {
+        //Given
+        try (MockedStatic<System> mockedSystem = mockStatic(System.class)) {
+            long currentTime = System.currentTimeMillis();
+            mockedSystem.when(System::currentTimeMillis).thenReturn(currentTime);
+        
+            String token = jwtUtil.generateToken("testUser");
+        
+            // Fast forward time beyond expiration
+            mockedSystem.when(System::currentTimeMillis)
+                  .thenReturn(currentTime + jwtExpiration + 1000);
+            //When
+            try {
+                jwtUtil.validateToken(token);
+            } catch (Exception e) {
+                //Then
+                assertThat(e).isInstanceOf(ExpiredJwtException.class);
+                assertThat(e.getMessage()).contains("JWT token is expired");
+            }
+        }
+    }
+
+    @Test
+    public void testValidateToken_GivenNullToken_ShouldThrowException() {
+        //Given
+        String token = null;
+        //When
+        try {
+            jwtUtil.validateToken(token);
+        } catch (Exception e) {
+            //Then
+            assertThat(e).isInstanceOf(IllegalArgumentException.class);
+            assertThat(e.getMessage()).contains("JWT claims string is empty");
+        }
+    }
+
+    @Test
+    public void testValidateToken_GivenTokenWithSpecialCharacters_ShouldReturnTrue() {
+        //Given
+        String login = " user!@#_$%^&*() ";
+        String token = jwtUtil.generateToken(login);
+        //When
+        boolean isValid = jwtUtil.validateToken(token);
+        //Then
+        assertThat(isValid).isTrue();
+    }
+
+    @Test
+    public void testValidateToken_GivenEmptyToken_ShouldThrowException() {
+        //Given
+        String token = "";
+        //When
+        try {
+            jwtUtil.validateToken(token);
+        } catch (Exception e) {
+            //Then
+            assertThat(e).isInstanceOf(IllegalArgumentException.class);
+            assertThat(e.getMessage()).contains("JWT claims string is empty");
+        }
+    }
+
+    @Test
+    public void testValidateToken_WithInvalidSignature_ShouldThrowException() {
+        String token = jwtUtil.generateToken("testUser");
+        // Modify the token to corrupt the signature
+        String corruptedToken = token.substring(0, token.length() - 5) + "xxxxx";
+        //When
+        try {
+            jwtUtil.validateToken(corruptedToken);
+        } catch (Exception e) {
+            //Then
+            assertThat(e).isInstanceOf(SecurityException.class);
+            assertThat(e.getMessage()).contains("Invalid JWT signature");
+        }
+    }
+
+    @Test
+    public void testTokenWorkflow_GenerateExtractValidate_ShouldWorkTogether() {
+        String login = "integrationTestUser";
+        // Generate token
+        String token = jwtUtil.generateToken(login);
+        assertThat(token).isNotNull();
+        // Extract login
+        String extractedLogin = jwtUtil.extractLogin(token);
+        assertThat(extractedLogin).isEqualTo(login);
+        // Validate token
+        boolean isValid = jwtUtil.validateToken(token);
+        assertThat(isValid).isTrue();
+    }
+
+    @Test
+    public void testTokenSecurity_DifferentInstance_ShouldThrowException() {
+        // Test that tokens created with different secret keys fail validation
+        JwtUtil anotherJwtUtil = new JwtUtil();
+        anotherJwtUtil.setJwtSecretKey("anotherSecretKeyThatIsAtLeast32CharactersLongForHS256Algorithm");
+        anotherJwtUtil.init();
+        String login = "testUser";
+        String token = jwtUtil.generateToken(login);
+        try {
+            anotherJwtUtil.validateToken(token);
+        } catch (Exception e) {
+            assertThat(e).isInstanceOf(MalformedJwtException.class);
+            assertThat(e.getMessage()).contains("Invalid JWT token");
         }
     }
 }
