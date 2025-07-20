@@ -23,6 +23,7 @@ public class JwtUtil {
     }
     //Token generation
     public String generateToken(String login) {
+        Log.info("Generating JWT token for login: " + login);
         return Jwts.builder()
                 .setSubject(login)
                 .setIssuedAt(new Date())
@@ -33,6 +34,7 @@ public class JwtUtil {
 
     public String extractLogin(String token) {
         try {
+            Log.info("Extracting login from JWT token");
             return Jwts.parserBuilder()
                     .setSigningKey(secretKey)
                     .build()
@@ -40,11 +42,11 @@ public class JwtUtil {
                     .getBody()
                     .getSubject();
         } catch (ExpiredJwtException e) {
-            System.out.println("JWT token is expired: " + e.getMessage());
+            Log.error("JWT token is expired: " + e.getMessage());
         } catch (MalformedJwtException e) {
-            System.out.println("Invalid JWT token: " + e.getMessage());
+            Log.error("Invalid JWT token: " + e.getMessage());
         } catch (IllegalArgumentException e) {
-            System.out.println("JWT claims string is empty: " + e.getMessage());
+            Log.error("JWT claims string is empty: " + e.getMessage());
         }
         return null;
     }
@@ -55,17 +57,18 @@ public class JwtUtil {
                     .setSigningKey(secretKey)
                     .build()
                     .parseClaimsJws(token);
+            Log.info("Validated JWT token successfully");
             return true;
         } catch (SecurityException e) {
-            System.out.println("Invalid JWT signature: " + e.getMessage());
+            Log.error("Invalid JWT signature: " + e.getMessage());
         } catch (MalformedJwtException e) {
-            System.out.println("Invalid JWT token: " + e.getMessage());
+            Log.error("Invalid JWT token: " + e.getMessage());
         } catch (ExpiredJwtException e) {
-            System.out.println("JWT token is expired: " + e.getMessage());
+            Log.error("JWT token is expired: " + e.getMessage());
         } catch (UnsupportedJwtException e) {
-            System.out.println("JWT token is unsupported: " + e.getMessage());
+            Log.error("JWT token is unsupported: " + e.getMessage());
         } catch (IllegalArgumentException e) {
-            System.out.println("JWT claims string is empty: " + e.getMessage());
+            Log.error("JWT claims string is empty: " + e.getMessage());
         }
         return false;
     }
