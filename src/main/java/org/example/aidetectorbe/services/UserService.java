@@ -16,7 +16,6 @@ public class UserService {
 
         User user = new User(userDTO.getLogin(), userDTO.getPassword(), userDTO.getEmail());
         userRepository.save(user);
-        System.out.println("Saved user: " + userDTO);
         return user.getId();
     }
 }
