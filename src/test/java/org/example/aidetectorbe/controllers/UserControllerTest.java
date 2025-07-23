@@ -28,7 +28,7 @@ public class UserControllerTest {
     }
 
     @Test
-    void shouldCreateUserAndReturnId() throws Exception {
+    void testCreateUser_GivenValidData_ShouldReturnCreatedStatus() throws Exception {
         // Given
         UserDTO userDTO = new UserDTO("login123", "pass123", "email@example.com");
         when(mockUserService.createUser(any(UserDTO.class))).thenReturn(42);
@@ -42,4 +42,31 @@ public class UserControllerTest {
 
         verify(mockUserService).createUser(any(UserDTO.class));
     }
+
+    @Test
+    void testCreateUser_GivenNullLogin_ShouldReturnBadRequest() throws Exception {
+        UserDTO userDTO = new UserDTO(null, "pass123", "email@example.com");
+
+        mockMvc.perform(post("/users/create")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(userDTO)))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("login cannot be blank")));
+
+        verify(mockUserService, never()).createUser(any());
+    }
+
+    @Test
+    void testCreateUser_GivenInvalidEmail_ShouldReturnBadRequest() throws Exception {
+        UserDTO userDTO = new UserDTO("login123", "pass123", "invalid-email");
+
+        mockMvc.perform(post("/users/create")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(userDTO)))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("email invalid or blank")));
+
+        verify(mockUserService, never()).createUser(any());
+    }
+
 }

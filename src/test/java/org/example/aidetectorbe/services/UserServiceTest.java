@@ -12,7 +12,7 @@ import static org.junit.jupiter.api.Assertions.*;
 public class UserServiceTest {
 
     @Test
-    public void testCreateUser() {
+    public void testCreateUser_GivenValidData_ShouldCorrectlySave() {
         UserRepository mockRepo = mock(UserRepository.class);
         UserService userService = new UserService(mockRepo);
 
