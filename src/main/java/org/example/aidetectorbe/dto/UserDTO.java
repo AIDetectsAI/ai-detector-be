@@ -15,7 +15,6 @@ public class UserDTO {
 
     @NotBlank @Email (message = "email invalid or blank")
     private String email;
-    private Boolean isDeleted;
 
     public UserDTO(String login, String password, String email) {
         this.login = login;

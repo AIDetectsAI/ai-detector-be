@@ -6,13 +6,15 @@ import org.example.aidetectorbe.entities.User;
 import org.example.aidetectorbe.repository.UserRepository;
 import org.springframework.stereotype.Service;
 
+import java.util.UUID;
+
 @Service
 @AllArgsConstructor
 public class UserService {
 
     private final UserRepository userRepository;
 
-    public int createUser(UserDTO userDTO) {
+    public UUID createUser(UserDTO userDTO) {
 
         User user = new User(userDTO.getLogin(), userDTO.getPassword(), userDTO.getEmail());
         userRepository.save(user);

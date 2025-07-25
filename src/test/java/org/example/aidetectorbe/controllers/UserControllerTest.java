@@ -9,6 +9,8 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
+import java.util.UUID;
+
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -31,14 +33,15 @@ public class UserControllerTest {
     void testCreateUser_GivenValidData_ShouldReturnCreatedStatus() throws Exception {
         // Given
         UserDTO userDTO = new UserDTO("login123", "pass123", "email@example.com");
-        when(mockUserService.createUser(any(UserDTO.class))).thenReturn(42);
+        UUID uuid = UUID.randomUUID();
+        when(mockUserService.createUser(any(UserDTO.class))).thenReturn(uuid);
 
         // When + Then
         mockMvc.perform(post("/users/create")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(userDTO)))
                 .andExpect(status().isCreated())
-                .andExpect(content().string("42"));
+                .andExpect(content().string("\"" + uuid.toString() + "\""));
 
         verify(mockUserService).createUser(any(UserDTO.class));
     }
