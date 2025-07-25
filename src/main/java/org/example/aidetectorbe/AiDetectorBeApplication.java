@@ -1,6 +1,6 @@
 package org.example.aidetectorbe;
 
-
+import org.example.aidetectorbe.logger.Log;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import static org.example.aidetectorbe.basicClientToDelete.saveRandomUser;
 
@@ -8,6 +8,7 @@ import static org.example.aidetectorbe.basicClientToDelete.saveRandomUser;
 public class AiDetectorBeApplication {
 
     public static void main(String[] args) {
-        saveRandomUser();
+       saveRandomUser();
+       Log.info("Application started successfully.");
     }
 }
