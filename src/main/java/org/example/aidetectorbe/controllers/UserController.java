@@ -12,6 +12,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.UUID;
+
 @RestController
 @RequestMapping("/users")
 @AllArgsConstructor
@@ -27,8 +29,7 @@ public class UserController {
                     .status(HttpStatus.BAD_REQUEST)
                     .body("invalid data: " + result.getAllErrors());
         }
-
-        int userId = userService.createUser(userDTO);
+        UUID userId = userService.createUser(userDTO);
         return ResponseEntity.status(HttpStatus.CREATED).body(userId);
     }
 

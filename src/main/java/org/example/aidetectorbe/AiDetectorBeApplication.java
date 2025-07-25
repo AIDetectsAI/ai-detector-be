@@ -8,6 +8,6 @@ import static org.example.aidetectorbe.basicClientToDelete.saveRandomUser;
 public class AiDetectorBeApplication {
 
     public static void main(String[] args) {
-       saveRandomUser();
+        saveRandomUser();
     }
 }
