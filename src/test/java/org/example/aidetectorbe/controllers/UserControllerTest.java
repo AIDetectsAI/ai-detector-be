@@ -11,9 +11,14 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.util.UUID;
 
-import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.never;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 public class UserControllerTest {
 
@@ -31,13 +36,11 @@ public class UserControllerTest {
 
     @Test
     void testCreateUser_GivenValidData_ShouldReturnCreatedStatus() throws Exception {
-        // Given
         UserDTO userDTO = new UserDTO("login123", "pass123", "email@example.com");
         UUID uuid = UUID.randomUUID();
         when(mockUserService.createUser(any(UserDTO.class))).thenReturn(uuid);
 
-        // When + Then
-        mockMvc.perform(post("/users/create")
+        mockMvc.perform(post("/users/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(userDTO)))
                 .andExpect(status().isCreated())
@@ -50,7 +53,7 @@ public class UserControllerTest {
     void testCreateUser_GivenNullLogin_ShouldReturnBadRequest() throws Exception {
         UserDTO userDTO = new UserDTO(null, "pass123", "email@example.com");
 
-        mockMvc.perform(post("/users/create")
+        mockMvc.perform(post("/users/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(userDTO)))
                 .andExpect(status().isBadRequest())
@@ -63,7 +66,7 @@ public class UserControllerTest {
     void testCreateUser_GivenInvalidEmail_ShouldReturnBadRequest() throws Exception {
         UserDTO userDTO = new UserDTO("login123", "pass123", "invalid-email");
 
-        mockMvc.perform(post("/users/create")
+        mockMvc.perform(post("/users/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(userDTO)))
                 .andExpect(status().isBadRequest())
@@ -71,5 +74,4 @@ public class UserControllerTest {
 
         verify(mockUserService, never()).createUser(any());
     }
-
 }
