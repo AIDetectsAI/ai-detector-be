@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/users")
+@RequestMapping("/auth")
 @AllArgsConstructor
 public class UserController {
 
@@ -33,6 +33,7 @@ public class UserController {
         }
         UUID userId = userService.createUser(userDTO);
         Log.info("User with id " + userId + " has been created");
-        return ResponseEntity.status(HttpStatus.CREATED).body(userId);
+        String message = "User with login " + userDTO.getLogin() + " has been created";
+        return ResponseEntity.status(HttpStatus.CREATED).body(message);
     }
 }
