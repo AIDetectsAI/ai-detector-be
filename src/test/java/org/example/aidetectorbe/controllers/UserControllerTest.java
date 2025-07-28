@@ -39,12 +39,14 @@ public class UserControllerTest {
         UserDTO userDTO = new UserDTO("login123", "pass123", "email@example.com");
         UUID uuid = UUID.randomUUID();
         when(mockUserService.createUser(any(UserDTO.class))).thenReturn(uuid);
+        String message = "User with login " + userDTO.getLogin() + " has been created";
 
-        mockMvc.perform(post("/users/register")
+
+        mockMvc.perform(post("/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(userDTO)))
                 .andExpect(status().isCreated())
-                .andExpect(content().string("\"" + uuid.toString() + "\""));
+                .andExpect(content().string(message));
 
         verify(mockUserService).createUser(any(UserDTO.class));
     }
@@ -53,7 +55,7 @@ public class UserControllerTest {
     void testCreateUser_GivenNullLogin_ShouldReturnBadRequest() throws Exception {
         UserDTO userDTO = new UserDTO(null, "pass123", "email@example.com");
 
-        mockMvc.perform(post("/users/register")
+        mockMvc.perform(post("/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(userDTO)))
                 .andExpect(status().isBadRequest())
@@ -66,7 +68,7 @@ public class UserControllerTest {
     void testCreateUser_GivenInvalidEmail_ShouldReturnBadRequest() throws Exception {
         UserDTO userDTO = new UserDTO("login123", "pass123", "invalid-email");
 
-        mockMvc.perform(post("/users/register")
+        mockMvc.perform(post("/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(userDTO)))
                 .andExpect(status().isBadRequest())
