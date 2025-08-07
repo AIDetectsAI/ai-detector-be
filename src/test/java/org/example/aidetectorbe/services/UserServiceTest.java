@@ -5,9 +5,8 @@ import org.example.aidetectorbe.repository.UserRepository;
 import org.example.aidetectorbe.dto.UserDTO;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-
 import java.util.UUID;
-
+import org.example.aidetectorbe.security.*;
 import static org.mockito.Mockito.*;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -16,7 +15,9 @@ public class UserServiceTest {
     @Test
     public void testCreateUser_GivenValidData_ShouldCorrectlySave() {
         UserRepository mockRepo = mock(UserRepository.class);
-        UserService userService = new UserService(mockRepo);
+        JwtUtil mockUtil = mock(JwtUtil.class);
+        Encoder mockEncoder = mock(Encoder.class);
+        UserService userService = new UserService(mockRepo, mockUtil, mockEncoder);
 
         UserDTO dto = new UserDTO("login123", "pass123", "email@example.com");
 
