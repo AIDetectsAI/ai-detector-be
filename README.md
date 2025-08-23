@@ -33,3 +33,7 @@ Linux machine (after setting executable to script):
 sh run-be.sh
 ```
 
+=======
+## Adding .env file
+For the jwt token to work correctly you need an .env file with the token secret string in the ai-detector-be directory. You can copy that file from files in Teams, Discord or create it manually with the necessary environment variables.
+

@@ -12,7 +12,6 @@ public  class basicClientToDelete {
 
         Integer randomId = (int) (Math.random() * 1000);
         User user = new User(
-                randomId,
                 "login" + randomId,
                 "password" + randomId,
                 "email" + randomId + "@example.com"

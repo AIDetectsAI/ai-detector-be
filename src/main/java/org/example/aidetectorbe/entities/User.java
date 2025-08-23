@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
+import java.util.UUID;
+
 @Data
 @Entity
 @AllArgsConstructor
@@ -11,7 +13,8 @@ import lombok.Data;
 public class User {
 
     @Id
-    private Integer id;
+    @GeneratedValue
+    private UUID id;
 
     @Column(nullable = false, length = 50)
     private String login;
@@ -25,8 +28,15 @@ public class User {
     @Column(nullable = false)
     private Boolean isDeleted;
 
-    public User(Integer  id, String login, String password, String email) {
+    public User(UUID  id, String login, String password, String email) {
         this.id = id;
+        this.login = login;
+        this.password = password;
+        this.email = email;
+        this.isDeleted = false;
+    }
+
+    public User(String login, String password, String email) {
         this.login = login;
         this.password = password;
         this.email = email;
