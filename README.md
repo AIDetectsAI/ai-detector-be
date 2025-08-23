@@ -11,7 +11,7 @@ This is a Java-based project using Spring Boot and Maven. It provides a foundati
 ## Getting Started
 
 ### Prerequisites
-- Java 17 or higher
+- Java 24 or higher
 - Maven 3.8 or higher
 
 ### Installation
@@ -19,5 +19,21 @@ This is a Java-based project using Spring Boot and Maven. It provides a foundati
    ```bash
    git clone <repository-url>
 
+### Running as container
+Beware it utilizes maven with spring-boot:build-image which uses Cloud Native Buildpacks to generate the image. You need to have java 24 version declared in maven as the used command depends on it.
+To run backend on port 8080 on your local machine you simply need to run a script depending on your machine OS.
+
+Windows machine:
+```ps1
+./run-be.ps1
+```
+
+Linux machine (after setting executable to script):
+```sh
+sh run-be.sh
+```
+
+=======
 ## Adding .env file
 For the jwt token to work correctly you need an .env file with the token secret string in the ai-detector-be directory. You can copy that file from files in Teams, Discord or create it manually with the necessary environment variables.
+
