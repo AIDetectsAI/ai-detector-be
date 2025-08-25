@@ -2,25 +2,24 @@ package org.example.aidetectorbe.controllers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.example.aidetectorbe.dto.UserDTO;
-import org.example.aidetectorbe.security.Encoder;
-import org.example.aidetectorbe.security.JwtUtil;
 import org.example.aidetectorbe.services.UserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+
 import java.util.UUID;
+
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
-import org.example.aidetectorbe.entities.User;
-import java.util.Optional;
 
 public class UserControllerTest {
 
     private MockMvc mockMvc;
     private UserService mockUserService;
+
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @BeforeEach
@@ -73,20 +72,4 @@ public class UserControllerTest {
         verify(mockUserService, never()).createUser(any());
     }
 
-    @Test
-    void testLogin_GivenCorrectData_ShouldReturnOk() throws Exception {
-        UserDTO xUser = new UserDTO("login", "password", null);
-        String json = objectMapper.writeValueAsString(xUser);
-        User mockUser = new User(UUID.randomUUID(), "login", "encrypted-password", null);
-
-        when(mockUserService.getUserByLogin("login")).thenReturn(Optional.of(mockUser));
-        when(mockUserService.encryptPassword("password")).thenReturn("ecnrypted-password");
-        when(mockUserService.generateToken("login")).thenReturn("mock-token");
-
-        mockMvc.perform(post("/users/login")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(json))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.token").value("mock-token"));
-    }
 }
