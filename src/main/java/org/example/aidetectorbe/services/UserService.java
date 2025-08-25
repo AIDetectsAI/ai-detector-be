@@ -6,7 +6,7 @@ import org.example.aidetectorbe.entities.User;
 import org.example.aidetectorbe.repository.UserRepository;
 import org.example.aidetectorbe.security.JwtUtil;
 import org.springframework.stereotype.Service;
-import org.example.aidetectorbe.security.Encoder;
+
 import java.util.Optional;
 import java.util.UUID;
 
@@ -15,7 +15,7 @@ import java.util.UUID;
 public class UserService {
     private final UserRepository userRepository;
     private final JwtUtil jwtUtil;
-    private final Encoder encoder;
+    private final PasswordHasher passwordHasher;
 
     public UUID createUser(UserDTO userDTO) {
 
@@ -33,6 +33,10 @@ public class UserService {
     }
 
     public String encryptPassword(String password){
-        return encoder.encryptPassword(password);
+        return passwordHasher.hashPassword(password);
+    }
+
+    public boolean verifyPassword(String password, String hashedPassword){
+        return passwordHasher.verifyPassword(password, hashedPassword);
     }
 }

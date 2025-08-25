@@ -2,32 +2,63 @@ package org.example.aidetectorbe.controllers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.example.aidetectorbe.dto.UserDTO;
+<<<<<<< Updated upstream
+=======
+import org.example.aidetectorbe.repository.UserRepository;
+import org.example.aidetectorbe.security.JwtUtil;
+import org.example.aidetectorbe.services.PasswordHasher;
+>>>>>>> Stashed changes
 import org.example.aidetectorbe.services.UserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.ResultMatcher;
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.util.UUID;
 
+<<<<<<< Updated upstream
+=======
+import static net.bytebuddy.matcher.ElementMatchers.is;
+>>>>>>> Stashed changes
 import static org.mockito.Mockito.*;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.jsonPath;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+<<<<<<< Updated upstream
 
+=======
+import org.example.aidetectorbe.entities.User;
+import java.util.Optional;
+@WebMvcTest(UserController.class)
+@AutoConfigureMockMvc
+>>>>>>> Stashed changes
 public class UserControllerTest {
-
+    @Autowired
     private MockMvc mockMvc;
+    @InjectMocks
     private UserService mockUserService;
+<<<<<<< Updated upstream
 
+=======
+    @Autowired
+>>>>>>> Stashed changes
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @BeforeEach
-    void setUp() {
+    /*void setUp() {
         mockUserService = mock(UserService.class);
         UserController userController = new UserController(mockUserService);
         mockMvc = MockMvcBuilders.standaloneSetup(userController).build();
-    }
+    }*/
 
     @Test
     void testCreateUser_GivenValidData_ShouldReturnCreatedStatus() throws Exception {
@@ -72,4 +103,23 @@ public class UserControllerTest {
         verify(mockUserService, never()).createUser(any());
     }
 
+<<<<<<< Updated upstream
+=======
+    @Test
+    void testLoginUser_GivenCorrectCredentials_ShouldReturnToken() throws Exception {
+        UserDTO userDTO = new UserDTO("user", "password", null);
+        User user = new User("user", "hashed-password", "user@test.com");
+        String expectedToken = "mocked-jwt-token";
+
+        Mockito.when(mockUserService.getUserByLogin("user")).thenReturn(Optional.of(user));
+        Mockito.when(mockUserService.verifyPassword("password", "hashed-password")).thenReturn(true);
+        Mockito.when(mockUserService.generateToken("user")).thenReturn(expectedToken);
+
+        mockMvc.perform(post("/users/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(userDTO)))
+                .andExpect(status().isOk())
+                .andExpect((ResultMatcher) jsonPath("$.token").value(expectedToken));
+    }
+>>>>>>> Stashed changes
 }

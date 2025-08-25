@@ -4,6 +4,7 @@ import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.example.aidetectorbe.dto.UserDTO;
 import org.example.aidetectorbe.entities.User;
+import org.example.aidetectorbe.services.PasswordHasher;
 import org.example.aidetectorbe.services.UserService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -43,7 +44,7 @@ public class UserController {
             return ResponseEntity.status(401).body("Login does not exist");
         }
         User user = userOptional.get();
-        if(!userService.encryptPassword(xUser.getPassword()).equals(user.getPassword())){
+        if(!userService.verifyPassword(xUser.getPassword(), user.getPassword())){
             return ResponseEntity.status(401).body("Invalid password");
         }
         String token = userService.generateToken(xUser.getLogin());
