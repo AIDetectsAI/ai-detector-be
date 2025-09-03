@@ -3,13 +3,19 @@ package org.example.aidetectorbe.entities;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
+import java.time.Instant;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
 
 @Data
 @Entity
+@NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "users")
+@Table(name = "users",
+        uniqueConstraints = @UniqueConstraint(columnNames = {"provider", "provider_user_id"}))
 public class User {
 
     @Id
@@ -19,30 +25,47 @@ public class User {
     @Column(nullable = false, length = 50)
     private String login;
 
-    @Column(nullable = false, length = 64)
+    @Column(length = 161)
     private String password;
 
     @Column(nullable = false, length = 50)
     private String email;
 
     @Column(nullable = false)
-    private Boolean isDeleted;
+    private Boolean isDeleted = false;
 
-    public User(UUID  id, String login, String password, String email) {
-        this.id = id;
+    @Column(nullable = false, length = 50)
+    private String provider;
+
+    @Column(name = "provider_user_id", nullable = false, length = 100)
+    private String providerUserId;
+
+    @Column
+    private Instant lastLoginAt;
+
+    @Column(nullable = false, updatable = false)
+    private Instant createdAt = Instant.now();
+
+    @Column(nullable = false)
+    private Instant updatedAt = Instant.now();
+
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(
+            name = "user_roles",
+            joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "role_id")
+    )
+    private Set<Role> roles = new HashSet<>();
+
+    public User(String login, String password, String email, String provider, String providerUserId, Set<Role> roles) {
         this.login = login;
         this.password = password;
         this.email = email;
         this.isDeleted = false;
-    }
-
-    public User(String login, String password, String email) {
-        this.login = login;
-        this.password = password;
-        this.email = email;
-        this.isDeleted = false;
-    }
-
-    public User() {
+        this.provider = provider;
+        this.providerUserId = providerUserId;
+        this.roles = roles;
+        this.createdAt = Instant.now();
+        this.updatedAt = Instant.now();
     }
 }
