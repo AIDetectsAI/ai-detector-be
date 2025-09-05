@@ -1,20 +1,25 @@
 package org.example.aidetectorbe.security;
+
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.TestPropertySource;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.example.aidetectorbe.TestUtils.setPrivateField;
+
 
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.MalformedJwtException;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
-@SpringBootTest
-@TestPropertySource(locations = "classpath:application-test.properties")
 public class JwtUtilTest {
 
-    @Autowired
     private JwtUtil jwtUtil;
+
+    @BeforeEach
+    void setUp() {
+        jwtUtil = new JwtUtil();
+        jwtUtil.setJwtSecretKey("99327f738b5a440eafe816a57260c0b1f1a121f0f2217b6a201838b36da2d524");
+        setPrivateField(jwtUtil, "jwtExpirationMs", 3600000L);
+        jwtUtil.init();
+    }
 
     @Test
     public void testGenerateToken_GivenValidLogin_ShouldReturnNonEmptyToken() {

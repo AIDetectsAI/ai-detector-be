@@ -7,6 +7,7 @@ import org.example.aidetectorbe.logger.Log;
 import org.example.aidetectorbe.services.UserService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -25,13 +26,13 @@ public class UserController {
     @PostMapping("/register")
     public ResponseEntity<?> createUser(@Valid @RequestBody UserDTO userDTO, BindingResult result) {
         Log.info("Received a request to register a new user");
-        if(result.hasErrors()) {
+        if (result.hasErrors()) {
             Log.error("Request contained invalid data");
             return ResponseEntity
                     .status(HttpStatus.BAD_REQUEST)
                     .body("invalid data: " + result.getAllErrors());
         }
-        UUID userId = userService.createUser(userDTO);
+        UUID userId = userService.createDefaultUser(userDTO);
         Log.info("User with id " + userId + " has been created");
         String message = "User with login " + userDTO.getLogin() + " has been created";
         return ResponseEntity.status(HttpStatus.CREATED).body(message);

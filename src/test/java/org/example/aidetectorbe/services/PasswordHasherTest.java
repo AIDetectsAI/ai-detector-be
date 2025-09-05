@@ -1,8 +1,7 @@
 package org.example.aidetectorbe.services;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -10,11 +9,14 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@SpringJUnitConfig(classes = PasswordHasher.class)
 class PasswordHasherTest {
 
-    @Autowired
     private PasswordHasher passwordHasher;
+
+    @BeforeEach
+    public void setUp() {
+        passwordHasher = new PasswordHasher();
+    }
 
     @Test
     void hashPassword_shouldReturnHashedString() {

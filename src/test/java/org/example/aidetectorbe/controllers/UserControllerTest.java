@@ -38,7 +38,7 @@ public class UserControllerTest {
     void testCreateUser_GivenValidData_ShouldReturnCreatedStatus() throws Exception {
         UserDTO userDTO = new UserDTO("login123", "pass123", "email@example.com");
         UUID uuid = UUID.randomUUID();
-        when(mockUserService.createUser(any(UserDTO.class))).thenReturn(uuid);
+        when(mockUserService.createDefaultUser(any(UserDTO.class))).thenReturn(uuid);
         String message = "User with login " + userDTO.getLogin() + " has been created";
 
 
@@ -48,7 +48,7 @@ public class UserControllerTest {
                 .andExpect(status().isCreated())
                 .andExpect(content().string(message));
 
-        verify(mockUserService).createUser(any(UserDTO.class));
+        verify(mockUserService).createDefaultUser(any(UserDTO.class));
     }
 
     @Test
@@ -61,7 +61,7 @@ public class UserControllerTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("login cannot be blank")));
 
-        verify(mockUserService, never()).createUser(any());
+        verify(mockUserService, never()).createDefaultUser(any());
     }
 
     @Test
@@ -74,6 +74,6 @@ public class UserControllerTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("email invalid or blank")));
 
-        verify(mockUserService, never()).createUser(any());
+        verify(mockUserService, never()).createDefaultUser(any());
     }
 }
