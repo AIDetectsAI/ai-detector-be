@@ -1,39 +1,22 @@
 package org.example.aidetectorbe.services;
 
-import org.example.aidetectorbe.entities.User;
-import org.example.aidetectorbe.repository.UserRepository;
 import org.example.aidetectorbe.dto.UserDTO;
+import org.example.aidetectorbe.entities.Role;
+import org.example.aidetectorbe.entities.User;
+import org.example.aidetectorbe.repository.RoleRepository;
+import org.example.aidetectorbe.repository.UserRepository;
 import org.example.aidetectorbe.security.JwtUtil;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
 import java.util.Optional;
 import java.util.UUID;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import static org.example.aidetectorbe.Constants.AI_DETECTOR_API_PROVIDER;
 import static org.example.aidetectorbe.Constants.DEFAULT_USER_ROLE;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.verify;
-import java.util.Optional;
-import static org.junit.jupiter.api.Assertions.*;
-public class UserServiceTest {
-    private UserRepository mockRepo;
-    private PasswordHasher mockHasher;
-    private JwtUtil mockjwtUtil;
-    private UserService userService;
-    @BeforeEach
-    public void setUp(){
-        mockRepo = mock(UserRepository.class);
-        mockHasher = mock(PasswordHasher.class);
-        mockjwtUtil = mock(JwtUtil.class);
-        userService = new UserService(mockRepo, mockHasher, mockjwtUtil);
-    }
 import static org.mockito.Mockito.*;
 
 class UserServiceTest {
@@ -48,7 +31,8 @@ class UserServiceTest {
         mockUserRepository = mock(UserRepository.class);
         mockRoleRepository = mock(RoleRepository.class);
         mockPasswordHasher = mock(PasswordHasher.class);
-        userService = new UserService(mockUserRepository, mockRoleRepository, mockPasswordHasher);
+        JwtUtil jwtUtil = new JwtUtil();
+        userService = new UserService(mockUserRepository, mockRoleRepository, mockPasswordHasher, jwtUtil);
 
         Role defaultRole = new Role();
         defaultRole.setName(DEFAULT_USER_ROLE);
@@ -62,13 +46,6 @@ class UserServiceTest {
         UUID generatedId = UUID.randomUUID();
         when(mockPasswordHasher.hashPassword("password123")).thenReturn("hashedPassword");
         when(mockUserRepository.save(any(User.class))).thenAnswer(invocation -> {
-    public void testCreateUser_GivenValidData_ShouldCorrectlySave() {
-        UserDTO dto = new UserDTO("login123", "pass123", "email@example.com");
-
-        UUID uuid = UUID.randomUUID();
-
-        ArgumentCaptor<User> captor = ArgumentCaptor.forClass(User.class);
-        when(mockRepo.save(any(User.class))).thenAnswer(invocation -> {
             User user = invocation.getArgument(0);
             user.setId(generatedId);
             return user;
@@ -115,18 +92,6 @@ class UserServiceTest {
     }
 
     @Test
-    void verifyUserByLogin_userDoesNotExist_shouldReturnFalse() {
-        UserDTO dto = new UserDTO("nonexistent", "password", "email@mail.com");
-
-        when(mockRepo.findByLogin("nonexistent")).thenReturn(Optional.empty());
-
-        boolean result = userService.verifyUserByLogin(dto);
-
-        assertFalse(result);
-    }
-}
-
-    @Test
     void createDefaultUser_ShouldAssignDefaultProvider() {
         // Arrange
         UserDTO userDTO = new UserDTO("testUser", "password123", "test@example.com");
@@ -142,5 +107,58 @@ class UserServiceTest {
         User savedUser = userCaptor.getValue();
 
         assertEquals(AI_DETECTOR_API_PROVIDER, savedUser.getProvider());
+    }
+
+    @Test
+    void verifyUserByLogin_returnsTrue_whenPasswordMatch(){
+        // given
+        UserDTO userDTO = new UserDTO("JohnParadox", "password", "mail@mail.mail");
+        User user = new User();
+        user.setLogin("login");
+        user.setPassword("hashedPassword");
+
+        // mocking
+        when(mockPasswordHasher.hashPassword("password")).thenReturn("hashedPassword");
+        when(mockUserRepository.findByLogin("JohnParadox")).thenReturn(Optional.of(user));
+
+        // when
+        boolean result = userService.verifyUserByLogin(userDTO);
+
+        // then
+        assertTrue(result);
+    }
+
+    @Test
+    void verifyUserByLogin_returnsFalse_whenPasswordDontMatch(){
+        // given
+        UserDTO userDTO = new UserDTO("JohnParadox", "password", "mail@mail.mail");
+        User user = new User();
+        user.setLogin("login");
+        user.setPassword("hashedPassword");
+
+        // mocking
+        when(mockPasswordHasher.hashPassword("password")).thenReturn("veryHashedPassword");
+        when(mockUserRepository.findByLogin("JohnParadox")).thenReturn(Optional.of(user));
+
+        // when
+        boolean result = userService.verifyUserByLogin(userDTO);
+
+        // then
+        assertFalse(result);
+    }
+
+    @Test
+    void verifyUserByLogin_returnsFalse_whenUserNotInRepository(){
+        // given
+        UserDTO userDTO = new UserDTO("JohnParadox", "password", "mail@mail.mail");
+
+        // mocking
+        when(mockUserRepository.findByLogin("login")).thenReturn(Optional.empty());
+
+        // when
+        boolean result = userService.verifyUserByLogin(userDTO);
+
+        // then
+        assertFalse(result);
     }
 }

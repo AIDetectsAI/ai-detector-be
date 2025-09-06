@@ -8,10 +8,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-
 import java.util.UUID;
-
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.verify;
@@ -75,5 +74,44 @@ public class UserControllerTest {
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("email invalid or blank")));
 
         verify(mockUserService, never()).createDefaultUser(any());
+    }
+
+    @Test
+    void testLoginUser_GivenCorrectCredentials_ShouldReturnToken() throws Exception {
+        // given
+        UserDTO userDTO = new UserDTO("JohnParadox", "password", "mail@mail.mail");
+
+        // mock
+        when(mockUserService.verifyUserByLogin(userDTO)).thenReturn(true);
+        when(mockUserService.getTokenByLogin("JohnParadox")).thenReturn("mocked_token");
+
+        // when n then
+        mockMvc.perform(post("/auth/login")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(userDTO)))
+                .andExpect(status().isOk())
+                .andExpect(content().json("{\"token\":\"mocked_token\"}"));
+
+        verify(mockUserService).verifyUserByLogin(userDTO);
+        verify(mockUserService).getTokenByLogin("JohnParadox");
+    }
+
+    @Test
+    void testLoginUser_GivenIncorrectCredentials_ShouldReturnUnauthorized() throws Exception {
+        // given
+        UserDTO userDTO = new UserDTO("JohnParadox", "password", "mail@mail.mail");
+
+        // mock
+        when(mockUserService.verifyUserByLogin(userDTO)).thenReturn(false);
+
+        // when n then
+        mockMvc.perform(post("/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(userDTO)))
+                .andExpect(status().isUnauthorized())
+                .andExpect(content().string("User does not exist or invalid password"));
+
+        verify(mockUserService).verifyUserByLogin(userDTO);
+        verify(mockUserService, never()).getTokenByLogin(anyString());
     }
 }
