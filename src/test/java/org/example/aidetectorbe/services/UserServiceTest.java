@@ -1,21 +1,39 @@
 package org.example.aidetectorbe.services;
 
-import org.example.aidetectorbe.dto.UserDTO;
-import org.example.aidetectorbe.entities.Role;
 import org.example.aidetectorbe.entities.User;
-import org.example.aidetectorbe.repository.RoleRepository;
 import org.example.aidetectorbe.repository.UserRepository;
+import org.example.aidetectorbe.dto.UserDTO;
+import org.example.aidetectorbe.security.JwtUtil;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
 import java.util.Optional;
 import java.util.UUID;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import static org.example.aidetectorbe.Constants.AI_DETECTOR_API_PROVIDER;
 import static org.example.aidetectorbe.Constants.DEFAULT_USER_ROLE;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verify;
+import java.util.Optional;
+import static org.junit.jupiter.api.Assertions.*;
+public class UserServiceTest {
+    private UserRepository mockRepo;
+    private PasswordHasher mockHasher;
+    private JwtUtil mockjwtUtil;
+    private UserService userService;
+    @BeforeEach
+    public void setUp(){
+        mockRepo = mock(UserRepository.class);
+        mockHasher = mock(PasswordHasher.class);
+        mockjwtUtil = mock(JwtUtil.class);
+        userService = new UserService(mockRepo, mockHasher, mockjwtUtil);
+    }
 import static org.mockito.Mockito.*;
 
 class UserServiceTest {
@@ -44,6 +62,13 @@ class UserServiceTest {
         UUID generatedId = UUID.randomUUID();
         when(mockPasswordHasher.hashPassword("password123")).thenReturn("hashedPassword");
         when(mockUserRepository.save(any(User.class))).thenAnswer(invocation -> {
+    public void testCreateUser_GivenValidData_ShouldCorrectlySave() {
+        UserDTO dto = new UserDTO("login123", "pass123", "email@example.com");
+
+        UUID uuid = UUID.randomUUID();
+
+        ArgumentCaptor<User> captor = ArgumentCaptor.forClass(User.class);
+        when(mockRepo.save(any(User.class))).thenAnswer(invocation -> {
             User user = invocation.getArgument(0);
             user.setId(generatedId);
             return user;
@@ -88,6 +113,18 @@ class UserServiceTest {
         assertEquals("Hashing failed", exception.getMessage());
         verify(mockUserRepository, never()).save(any(User.class));
     }
+
+    @Test
+    void verifyUserByLogin_userDoesNotExist_shouldReturnFalse() {
+        UserDTO dto = new UserDTO("nonexistent", "password", "email@mail.com");
+
+        when(mockRepo.findByLogin("nonexistent")).thenReturn(Optional.empty());
+
+        boolean result = userService.verifyUserByLogin(dto);
+
+        assertFalse(result);
+    }
+}
 
     @Test
     void createDefaultUser_ShouldAssignDefaultProvider() {
