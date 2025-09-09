@@ -30,12 +30,12 @@ public class UserService {
         return user.getId();
     }
 
-    public boolean verifyUserByLogin(UserDTO userDTO) {
-        User user = userRepository.findByLogin(userDTO.getLogin()).orElse(null);
+    public boolean verifyUserByLoginAndProvider(UserDTO userDTO, String provider) {
+        User user = userRepository.findByLoginAndProvider(userDTO.getLogin(), provider).orElse(null);
         if (user == null){
             return false;
         }
-        if (!AI_DETECTOR_API_PROVIDER.equals(user.getProvider())) {
+        if (!user.getProvider().equals(provider)) {
             return false;
         }
         return passwordHasher.hashPassword(userDTO.getPassword()).equals(user.getPassword());

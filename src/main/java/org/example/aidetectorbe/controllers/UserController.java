@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import java.util.UUID;
+import static org.example.aidetectorbe.Constants.AI_DETECTOR_API_PROVIDER;
 
 @RestController
 @RequestMapping("/auth")
@@ -39,9 +40,9 @@ public class UserController {
 
     @PostMapping("/login")
     public ResponseEntity<?> loginUser(@Valid @RequestBody UserDTO userDTO) {
-        Log.info(String.format("User '%s' is requesting to log in", userDTO.getLogin()));
-        if (!userService.verifyUserByLogin(userDTO)){
-            Log.info(String.format("Invalid password for log in to user '%s'", userDTO.getLogin()));
+        Log.info(String.format("Attempting to log in with login '%s'", userDTO.getLogin()));
+        if (!userService.verifyUserByLoginAndProvider(userDTO, AI_DETECTOR_API_PROVIDER)){
+            Log.info(String.format("Invalid password for attempted login as '%s'", userDTO.getLogin()));
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User does not exist or invalid password");
         }
         String token = userService.getTokenByLogin(userDTO.getLogin());

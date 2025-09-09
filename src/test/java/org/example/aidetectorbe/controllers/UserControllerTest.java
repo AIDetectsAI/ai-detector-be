@@ -8,6 +8,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+
+import javax.print.attribute.standard.Media;
 import java.util.UUID;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -18,7 +20,7 @@ import static org.mockito.Mockito.never;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
+import static org.example.aidetectorbe.Constants.AI_DETECTOR_API_PROVIDER;
 public class UserControllerTest {
 
     private MockMvc mockMvc;
@@ -82,7 +84,7 @@ public class UserControllerTest {
         UserDTO userDTO = new UserDTO("JohnParadox", "password", "mail@mail.mail");
 
         // mock
-        when(mockUserService.verifyUserByLogin(userDTO)).thenReturn(true);
+        when(mockUserService.verifyUserByLoginAndProvider(userDTO, AI_DETECTOR_API_PROVIDER)).thenReturn(true);
         when(mockUserService.getTokenByLogin("JohnParadox")).thenReturn("mocked_token");
 
         // when n then
@@ -92,7 +94,7 @@ public class UserControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(content().json("{\"token\":\"mocked_token\"}"));
 
-        verify(mockUserService).verifyUserByLogin(userDTO);
+        verify(mockUserService).verifyUserByLoginAndProvider(userDTO, AI_DETECTOR_API_PROVIDER);
         verify(mockUserService).getTokenByLogin("JohnParadox");
     }
 
@@ -102,7 +104,7 @@ public class UserControllerTest {
         UserDTO userDTO = new UserDTO("JohnParadox", "password", "mail@mail.mail");
 
         // mock
-        when(mockUserService.verifyUserByLogin(userDTO)).thenReturn(false);
+        when(mockUserService.verifyUserByLoginAndProvider(userDTO, AI_DETECTOR_API_PROVIDER)).thenReturn(false);
 
         // when n then
         mockMvc.perform(post("/auth/login")
@@ -111,7 +113,31 @@ public class UserControllerTest {
                 .andExpect(status().isUnauthorized())
                 .andExpect(content().string("User does not exist or invalid password"));
 
-        verify(mockUserService).verifyUserByLogin(userDTO);
+        verify(mockUserService).verifyUserByLoginAndProvider(userDTO, AI_DETECTOR_API_PROVIDER);
         verify(mockUserService, never()).getTokenByLogin(anyString());
+    }
+
+    @Test
+    void testLoginUser_GivenNullLogin_ShouldReturnBadRequest() throws Exception {
+        String bad_json = """
+        "password" : "pass",
+        "email" : "mail@mail.com"
+        """;
+        mockMvc.perform(post("/auth/login")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(bad_json))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void testLoginUser_GivenNullPassword_ShouldReturnBadRequest() throws Exception {
+        String bad_json = """
+        "login" : "JohnParadox",
+        "email" : "mail@mail.com"
+        """;
+        mockMvc.perform(post("/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(bad_json))
+                .andExpect(status().isBadRequest());
     }
 }

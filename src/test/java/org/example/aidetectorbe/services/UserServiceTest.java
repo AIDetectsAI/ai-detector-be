@@ -9,10 +9,8 @@ import org.example.aidetectorbe.security.JwtUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-
 import java.util.Optional;
 import java.util.UUID;
-
 import static org.example.aidetectorbe.Constants.AI_DETECTOR_API_PROVIDER;
 import static org.example.aidetectorbe.Constants.DEFAULT_USER_ROLE;
 import static org.junit.jupiter.api.Assertions.*;
@@ -120,10 +118,10 @@ class UserServiceTest {
 
         // mocking
         when(mockPasswordHasher.hashPassword("password")).thenReturn("hashedPassword");
-        when(mockUserRepository.findByLogin("JohnParadox")).thenReturn(Optional.of(user));
+        when(mockUserRepository.findByLoginAndProvider("JohnParadox", AI_DETECTOR_API_PROVIDER)).thenReturn(Optional.of(user));
 
         // when
-        boolean result = userService.verifyUserByLogin(userDTO);
+        boolean result = userService.verifyUserByLoginAndProvider(userDTO, AI_DETECTOR_API_PROVIDER);
 
         // then
         assertTrue(result);
@@ -140,10 +138,10 @@ class UserServiceTest {
 
         // mocking
         when(mockPasswordHasher.hashPassword("password")).thenReturn("veryHashedPassword");
-        when(mockUserRepository.findByLogin("JohnParadox")).thenReturn(Optional.of(user));
+        when(mockUserRepository.findByLoginAndProvider("JohnParadox", AI_DETECTOR_API_PROVIDER)).thenReturn(Optional.of(user));
 
         // when
-        boolean result = userService.verifyUserByLogin(userDTO);
+        boolean result = userService.verifyUserByLoginAndProvider(userDTO, AI_DETECTOR_API_PROVIDER);
 
         // then
         assertFalse(result);
@@ -155,10 +153,10 @@ class UserServiceTest {
         UserDTO userDTO = new UserDTO("JohnParadox", "password", "mail@mail.mail");
 
         // mocking
-        when(mockUserRepository.findByLogin("login")).thenReturn(Optional.empty());
+        when(mockUserRepository.findByLoginAndProvider("login", AI_DETECTOR_API_PROVIDER)).thenReturn(Optional.empty());
 
         // when
-        boolean result = userService.verifyUserByLogin(userDTO);
+        boolean result = userService.verifyUserByLoginAndProvider(userDTO, AI_DETECTOR_API_PROVIDER);
 
         // then
         assertFalse(result);
@@ -175,10 +173,10 @@ class UserServiceTest {
 
         // mocking
         when(mockPasswordHasher.hashPassword("password")).thenReturn("hashedPassword");
-        when(mockUserRepository.findByLogin("JohnParadox")).thenReturn(Optional.of(user));
+        when(mockUserRepository.findByLoginAndProvider("JohnParadox", AI_DETECTOR_API_PROVIDER)).thenReturn(Optional.of(user));
 
         // when
-        boolean result = userService.verifyUserByLogin(userDTO);
+        boolean result = userService.verifyUserByLoginAndProvider(userDTO, AI_DETECTOR_API_PROVIDER);
 
         // then
         assertFalse(result);
