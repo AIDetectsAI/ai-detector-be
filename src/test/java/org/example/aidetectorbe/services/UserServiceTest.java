@@ -116,6 +116,7 @@ class UserServiceTest {
         User user = new User();
         user.setLogin("login");
         user.setPassword("hashedPassword");
+        user.setProvider(AI_DETECTOR_API_PROVIDER);
 
         // mocking
         when(mockPasswordHasher.hashPassword("password")).thenReturn("hashedPassword");
@@ -135,6 +136,7 @@ class UserServiceTest {
         User user = new User();
         user.setLogin("login");
         user.setPassword("hashedPassword");
+        user.setProvider(AI_DETECTOR_API_PROVIDER);
 
         // mocking
         when(mockPasswordHasher.hashPassword("password")).thenReturn("veryHashedPassword");
@@ -154,6 +156,26 @@ class UserServiceTest {
 
         // mocking
         when(mockUserRepository.findByLogin("login")).thenReturn(Optional.empty());
+
+        // when
+        boolean result = userService.verifyUserByLogin(userDTO);
+
+        // then
+        assertFalse(result);
+    }
+
+    @Test
+    void verifyUserByLogin_returnsFalse_whenIncorrectProvider(){
+        // given
+        UserDTO userDTO = new UserDTO("JohnParadox", "password", "mail@mail.mail");
+        User user = new User();
+        user.setLogin("login");
+        user.setPassword("hashedPassword");
+        user.setProvider("totally_not_us");
+
+        // mocking
+        when(mockPasswordHasher.hashPassword("password")).thenReturn("hashedPassword");
+        when(mockUserRepository.findByLogin("JohnParadox")).thenReturn(Optional.of(user));
 
         // when
         boolean result = userService.verifyUserByLogin(userDTO);

@@ -30,9 +30,12 @@ public class UserService {
         return user.getId();
     }
 
-    public boolean verifyUserByLogin(UserDTO userDTO){
+    public boolean verifyUserByLogin(UserDTO userDTO) {
         User user = userRepository.findByLogin(userDTO.getLogin()).orElse(null);
-        if(user == null){
+        if (user == null){
+            return false;
+        }
+        if (!AI_DETECTOR_API_PROVIDER.equals(user.getProvider())) {
             return false;
         }
         return passwordHasher.hashPassword(userDTO.getPassword()).equals(user.getPassword());

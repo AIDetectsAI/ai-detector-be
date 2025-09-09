@@ -38,9 +38,9 @@ public class UserController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> loginUser(@Valid @RequestBody UserDTO userDTO){
+    public ResponseEntity<?> loginUser(@Valid @RequestBody UserDTO userDTO) {
         Log.info(String.format("User '%s' is requesting to log in", userDTO.getLogin()));
-        if(!userService.verifyUserByLogin(userDTO)){
+        if (!userService.verifyUserByLogin(userDTO)){
             Log.info(String.format("Invalid password for log in to user '%s'", userDTO.getLogin()));
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User does not exist or invalid password");
         }
