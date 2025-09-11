@@ -5,13 +5,12 @@ import org.example.aidetectorbe.entities.Role;
 import org.example.aidetectorbe.entities.User;
 import org.example.aidetectorbe.repository.RoleRepository;
 import org.example.aidetectorbe.repository.UserRepository;
+import org.example.aidetectorbe.security.JwtUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-
 import java.util.Optional;
 import java.util.UUID;
-
 import static org.example.aidetectorbe.Constants.AI_DETECTOR_API_PROVIDER;
 import static org.example.aidetectorbe.Constants.DEFAULT_USER_ROLE;
 import static org.junit.jupiter.api.Assertions.*;
@@ -30,7 +29,8 @@ class UserServiceTest {
         mockUserRepository = mock(UserRepository.class);
         mockRoleRepository = mock(RoleRepository.class);
         mockPasswordHasher = mock(PasswordHasher.class);
-        userService = new UserService(mockUserRepository, mockRoleRepository, mockPasswordHasher);
+        JwtUtil jwtUtil = new JwtUtil();
+        userService = new UserService(mockUserRepository, mockRoleRepository, mockPasswordHasher, jwtUtil);
 
         Role defaultRole = new Role();
         defaultRole.setName(DEFAULT_USER_ROLE);
@@ -105,5 +105,80 @@ class UserServiceTest {
         User savedUser = userCaptor.getValue();
 
         assertEquals(AI_DETECTOR_API_PROVIDER, savedUser.getProvider());
+    }
+
+    @Test
+    void verifyUserByLogin_returnsTrue_whenPasswordMatch(){
+        // given
+        UserDTO userDTO = new UserDTO("JohnParadox", "password", "mail@mail.mail");
+        User user = new User();
+        user.setLogin("login");
+        user.setPassword("hashedPassword");
+        user.setProvider(AI_DETECTOR_API_PROVIDER);
+
+        // mocking
+        when(mockPasswordHasher.hashPassword("password")).thenReturn("hashedPassword");
+        when(mockUserRepository.findByLoginAndProvider("JohnParadox", AI_DETECTOR_API_PROVIDER)).thenReturn(Optional.of(user));
+
+        // when
+        boolean result = userService.verifyUserByLoginAndProvider(userDTO, AI_DETECTOR_API_PROVIDER);
+
+        // then
+        assertTrue(result);
+    }
+
+    @Test
+    void verifyUserByLogin_returnsFalse_whenPasswordDontMatch(){
+        // given
+        UserDTO userDTO = new UserDTO("JohnParadox", "password", "mail@mail.mail");
+        User user = new User();
+        user.setLogin("login");
+        user.setPassword("hashedPassword");
+        user.setProvider(AI_DETECTOR_API_PROVIDER);
+
+        // mocking
+        when(mockPasswordHasher.hashPassword("password")).thenReturn("veryHashedPassword");
+        when(mockUserRepository.findByLoginAndProvider("JohnParadox", AI_DETECTOR_API_PROVIDER)).thenReturn(Optional.of(user));
+
+        // when
+        boolean result = userService.verifyUserByLoginAndProvider(userDTO, AI_DETECTOR_API_PROVIDER);
+
+        // then
+        assertFalse(result);
+    }
+
+    @Test
+    void verifyUserByLogin_returnsFalse_whenUserNotInRepository(){
+        // given
+        UserDTO userDTO = new UserDTO("JohnParadox", "password", "mail@mail.mail");
+
+        // mocking
+        when(mockUserRepository.findByLoginAndProvider("login", AI_DETECTOR_API_PROVIDER)).thenReturn(Optional.empty());
+
+        // when
+        boolean result = userService.verifyUserByLoginAndProvider(userDTO, AI_DETECTOR_API_PROVIDER);
+
+        // then
+        assertFalse(result);
+    }
+
+    @Test
+    void verifyUserByLogin_returnsFalse_whenIncorrectProvider(){
+        // given
+        UserDTO userDTO = new UserDTO("JohnParadox", "password", "mail@mail.mail");
+        User user = new User();
+        user.setLogin("login");
+        user.setPassword("hashedPassword");
+        user.setProvider("totally_not_us");
+
+        // mocking
+        when(mockPasswordHasher.hashPassword("password")).thenReturn("hashedPassword");
+        when(mockUserRepository.findByLoginAndProvider("JohnParadox", AI_DETECTOR_API_PROVIDER)).thenReturn(Optional.of(user));
+
+        // when
+        boolean result = userService.verifyUserByLoginAndProvider(userDTO, AI_DETECTOR_API_PROVIDER);
+
+        // then
+        assertFalse(result);
     }
 }
