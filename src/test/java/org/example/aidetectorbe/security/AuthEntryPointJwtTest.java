@@ -7,14 +7,18 @@ import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.security.core.AuthenticationException;
 import jakarta.servlet.http.HttpServletResponse;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.JsonNode;
 
 public class AuthEntryPointJwtTest {
 
     private AuthEntryPointJwt authEntryPointJwt;
+    private ObjectMapper objectMapper;
 
     @BeforeEach
     void setUp() {
         authEntryPointJwt = new AuthEntryPointJwt();
+        objectMapper = new ObjectMapper();
     }
 
     @Test
@@ -27,7 +31,12 @@ public class AuthEntryPointJwtTest {
         authEntryPointJwt.commence(request, response, authException);
         // Then
         assertThat(response.getStatus()).isEqualTo(HttpServletResponse.SC_UNAUTHORIZED);
-        assertThat(response.getErrorMessage()).isEqualTo("Error: Unauthorized");
+        assertThat(response.getContentType()).isEqualTo("application/json");
+        String responseContent = response.getContentAsString();
+        JsonNode jsonResponse = objectMapper.readTree(responseContent);
+        assertThat(jsonResponse.get("error").asText()).isEqualTo("Unauthorized");
+        assertThat(jsonResponse.get("message").asText()).isEqualTo("Test exception");
+        assertThat(jsonResponse.get("status").asInt()).isEqualTo(401);
     }
 
     @Test
@@ -39,7 +48,12 @@ public class AuthEntryPointJwtTest {
         authEntryPointJwt.commence(null, response, authException);
         // Then
         assertThat(response.getStatus()).isEqualTo(HttpServletResponse.SC_UNAUTHORIZED);
-        assertThat(response.getErrorMessage()).isEqualTo("Error: Unauthorized");
+        assertThat(response.getContentType()).isEqualTo("application/json");
+        String responseContent = response.getContentAsString();
+        JsonNode jsonResponse = objectMapper.readTree(responseContent);
+        assertThat(jsonResponse.get("error").asText()).isEqualTo("Unauthorized");
+        assertThat(jsonResponse.get("message").asText()).isEqualTo("Test exception");
+        assertThat(jsonResponse.get("status").asInt()).isEqualTo(401);
     }
 
     @Test
@@ -69,6 +83,11 @@ public class AuthEntryPointJwtTest {
         authEntryPointJwt.commence(request, response, null);
         // Then
         assertThat(response.getStatus()).isEqualTo(HttpServletResponse.SC_UNAUTHORIZED);
-        assertThat(response.getErrorMessage()).isEqualTo("Error: Unauthorized");
+        assertThat(response.getContentType()).isEqualTo("application/json");
+        String responseContent = response.getContentAsString();
+        JsonNode jsonResponse = objectMapper.readTree(responseContent);
+        assertThat(jsonResponse.get("error").asText()).isEqualTo("Unauthorized");
+        assertThat(jsonResponse.get("message").asText()).isEqualTo("Authentication required");
+        assertThat(jsonResponse.get("status").asInt()).isEqualTo(401);
     }
 }

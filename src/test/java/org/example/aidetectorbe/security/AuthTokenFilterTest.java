@@ -1,7 +1,5 @@
 package org.example.aidetectorbe.security;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -10,14 +8,18 @@ import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.mock.web.MockFilterChain;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.http.HttpServletResponse;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.JsonNode;
 
 public class AuthTokenFilterTest {
     
     private AuthTokenFilter authTokenFilter;
+    private ObjectMapper objectMapper;
 
     @BeforeEach
     void setUp() {
         authTokenFilter = new AuthTokenFilter();
+        objectMapper = new ObjectMapper();
     }
 
     @Test
@@ -75,19 +77,25 @@ public class AuthTokenFilterTest {
     }
 
     @Test
-    public void doFilterInternal_ShouldNotAuthorize_WhenJwtValidationFails() {
+    public void doFilterInternal_ShouldNotAuthorize_WhenJwtValidationFails() throws Exception {
         // Given
         MockHttpServletRequest request = new MockHttpServletRequest();
         request.addHeader("Authorization", "Bearer abcdefg");
         MockHttpServletResponse response = new MockHttpServletResponse();
         FilterChain filterChain = new MockFilterChain();
+        
         // When
-        try {
-            authTokenFilter.doFilterInternal(request, response, filterChain);
-        } catch (Exception e) {
-            assertFalse(true);
-        }
+        authTokenFilter.doFilterInternal(request, response, filterChain);
+        
         // Then
         assertThat(response.getStatus()).isEqualTo(HttpServletResponse.SC_UNAUTHORIZED);
+        assertThat(response.getContentType()).isEqualTo("application/json");
+        
+        String responseContent = response.getContentAsString();
+        JsonNode jsonResponse = objectMapper.readTree(responseContent);
+        
+        assertThat(jsonResponse.get("error").asText()).isEqualTo("Unauthorized");
+        assertThat(jsonResponse.get("status").asInt()).isEqualTo(401);
+        assertThat(jsonResponse.has("message")).isTrue();
     }
 }

@@ -29,8 +29,17 @@ public class AuthTokenFilter extends OncePerRequestFilter {
             }
             filterChain.doFilter(request, response);
         } catch (Exception e) {
-            Log.error(ALREADY_FILTERED_SUFFIX);
-            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Error: Unauthorized");
+            Log.error("JWT authentication failed: " + e.getMessage());
+            response.setContentType("application/json");
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            
+            String errorMessage = e.getMessage() != null ? e.getMessage().replace("\"", "\\\"") : "Authentication failed";
+            String jsonResponse = String.format(
+                "{\"error\": \"Unauthorized\", \"message\": \"%s\", \"status\": %d}",
+                errorMessage,
+                HttpServletResponse.SC_UNAUTHORIZED
+            );
+            response.getWriter().write(jsonResponse);
         }
     }
 
