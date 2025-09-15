@@ -1,0 +1,62 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [ "**" ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout application repo
+        uses: actions/checkout@v4
+
+      - name: Checkout database config repo
+        uses: actions/checkout@v4
+        with:
+          repository: AIDetectsAI/ai-detector-database
+          path: ai-detector-db
+
+      - name: Set up JDK 22
+        uses: actions/setup-java@v4
+        with:
+          java-version: 22
+          distribution: temurin
+          cache: maven
+
+      - name: Create .env file for DB
+        run: |
+          cat <<EOF > ai-detector-db/.env
+          POSTGRES_USER=testuser
+          POSTGRES_PASSWORD=testpass
+          POSTGRES_DB=AIDB
+          EOF
+
+      - name: Start database with docker-compose
+        run: |
+          cd ai-detector-db
+          docker-compose up -d
+          for i in {1..30}; do
+            if docker exec $(docker ps -qf "name=postgres") pg_isready -U testuser -d AIDB; then
+              echo "Postgres is ready!"
+              break
+            fi
+            echo "Waiting for Postgres..."
+            sleep 2
+          done
+
+      - name: Run tests
+        env:
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          DB_USER: testuser
+          DB_PASS: testpass
+        run: ./mvnw test --batch-mode
+
+      - name: Publish test results
+        if: always()
+        uses: dorny/test-reporter@v1
+        with:
+          name: JUnit Tests
+          path: target/surefire-reports/*.xml
+          reporter: java-junit
