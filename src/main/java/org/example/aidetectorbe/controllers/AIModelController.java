@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
+import jakarta.servlet.http.HttpServletRequest;
 
 @RestController
 @RequestMapping("/api")
@@ -19,11 +20,11 @@ public class AIModelController {
     // TODO: Inject AI model service here when created
 
     @PostMapping(value = "/useModel", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<?> useModel(@RequestParam("image") MultipartFile image) {
-        Log.info("Received request to analyze image with AI model");
+    public ResponseEntity<?> useModel(@RequestParam("image") MultipartFile image, HttpServletRequest request) {
+        String authenticatedUser = (String) request.getAttribute("login");
+        Log.info("Received request to analyze image with AI model from user: " + authenticatedUser);
         
         try {
-            // Validate image file
             if (image.isEmpty()) {
                 Log.error("No image file provided");
                 return ResponseEntity
@@ -31,7 +32,6 @@ public class AIModelController {
                     .body("{\"error\": \"Bad Request\", \"message\": \"No image file provided\", \"status\": 400}");
             }
             
-            // Validate file type
             String contentType = image.getContentType();
             if (contentType == null || !contentType.startsWith("image/")) {
                 Log.error("Invalid file type: " + contentType);
