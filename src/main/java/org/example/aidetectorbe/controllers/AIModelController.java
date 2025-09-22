@@ -4,9 +4,11 @@ import lombok.AllArgsConstructor;
 import org.example.aidetectorbe.dto.AIModelResponse;
 import org.example.aidetectorbe.dto.ErrorResponse;
 import org.example.aidetectorbe.logger.Log;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.unit.DataSize;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -18,6 +20,9 @@ import jakarta.servlet.http.HttpServletRequest;
 @RequestMapping("/api")
 @AllArgsConstructor
 public class AIModelController {
+
+    @Value("${spring.servlet.multipart.max-file-size}")
+    private DataSize maxFileSize;
 
     // TODO: Inject AI model service here when created
 
@@ -33,6 +38,17 @@ public class AIModelController {
             if (image.isEmpty()) {
                 Log.error("No image file provided");
                 ErrorResponse errorResponse = new ErrorResponse("Bad Request", "No image file provided", 400);
+                return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body(errorResponse);
+            }
+            
+            // Validate file size (using configured limit)
+            long maxFileSizeBytes = maxFileSize.toBytes();
+            if (image.getSize() > maxFileSizeBytes) {
+                Log.error("File size too large: " + image.getSize() + " bytes (max: " + maxFileSizeBytes + " bytes)");
+                ErrorResponse errorResponse = new ErrorResponse("Bad Request", 
+                    "File size too large. Maximum allowed size is " + maxFileSize.toString(), 400);
                 return ResponseEntity
                     .status(HttpStatus.BAD_REQUEST)
                     .body(errorResponse);
