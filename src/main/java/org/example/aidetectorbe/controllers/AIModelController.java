@@ -1,6 +1,8 @@
 package org.example.aidetectorbe.controllers;
 
 import lombok.AllArgsConstructor;
+import org.example.aidetectorbe.dto.AIModelResponse;
+import org.example.aidetectorbe.dto.ErrorResponse;
 import org.example.aidetectorbe.logger.Log;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -24,40 +26,53 @@ public class AIModelController {
         String authenticatedUser = (String) request.getAttribute("login");
         Log.info("Received request to analyze image with AI model from user: " + authenticatedUser);
         
+        long startTime = System.currentTimeMillis();
+        
         try {
+            // Validate image file
             if (image.isEmpty()) {
                 Log.error("No image file provided");
+                ErrorResponse errorResponse = new ErrorResponse("Bad Request", "No image file provided", 400);
                 return ResponseEntity
                     .status(HttpStatus.BAD_REQUEST)
-                    .body("{\"error\": \"Bad Request\", \"message\": \"No image file provided\", \"status\": 400}");
+                    .body(errorResponse);
             }
             
+            // Validate file type
             String contentType = image.getContentType();
             if (contentType == null || !contentType.startsWith("image/")) {
                 Log.error("Invalid file type: " + contentType);
+                ErrorResponse errorResponse = new ErrorResponse("Bad Request", "File must be an image", 400);
                 return ResponseEntity
                     .status(HttpStatus.BAD_REQUEST)
-                    .body("{\"error\": \"Bad Request\", \"message\": \"File must be an image\", \"status\": 400}");
+                    .body(errorResponse);
             }
             
             Log.info("Processing image: " + image.getOriginalFilename() + " (" + image.getSize() + " bytes)");
             
             // TODO: Call AI model service to process the image
-            // String result = aiModelService.processImage(image);
+            // AIModelResponse result = aiModelService.processImage(image);
             
-            // Temporary response
-            String result = "{\"result\": \"Image processed successfully\", \"confidence\": 0.95}";
+            // Temporary response with processing time
+            long processingTime = System.currentTimeMillis() - startTime;
+            AIModelResponse response = new AIModelResponse(
+                "Image processed successfully", 
+                0.95, 
+                "TempModel-v1.0", 
+                processingTime
+            );
             
-            Log.info("Image analysis completed successfully");
+            Log.info("Image analysis completed successfully in " + processingTime + "ms");
             return ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_JSON)
-                .body(result);
+                .body(response);
                 
         } catch (Exception e) {
             Log.error("Error processing image: " + e.getMessage());
+            ErrorResponse errorResponse = new ErrorResponse("Internal Server Error", "Failed to process image", 500);
             return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body("{\"error\": \"Internal Server Error\", \"message\": \"Failed to process image\", \"status\": 500}");
+                .body(errorResponse);
         }
     }
 }
