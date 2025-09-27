@@ -1,9 +1,11 @@
 package org.example.aidetectorbe.controllers;
 
-import lombok.AllArgsConstructor;
 import org.example.aidetectorbe.dto.AIModelResponse;
 import org.example.aidetectorbe.dto.ErrorResponse;
+import org.example.aidetectorbe.exceptions.AIServiceException;
 import org.example.aidetectorbe.logger.Log;
+import org.example.aidetectorbe.services.AIModelService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -18,20 +20,18 @@ import jakarta.servlet.http.HttpServletRequest;
 
 @RestController
 @RequestMapping("/api")
-@AllArgsConstructor
 public class AIModelController {
 
     @Value("${spring.servlet.multipart.max-file-size}")
     private DataSize maxFileSize;
 
-    // TODO: Inject AI model service here when created
+    @Autowired
+    private AIModelService aiModelService;
 
     @PostMapping(value = "/useModel", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> useModel(@RequestParam("image") MultipartFile image, HttpServletRequest request) {
         String authenticatedUser = (String) request.getAttribute("login");
         Log.info("Received request to analyze image with AI model from user: " + authenticatedUser);
-        
-        long startTime = System.currentTimeMillis();
         
         try {
             // Validate image file
@@ -66,25 +66,22 @@ public class AIModelController {
             
             Log.info("Processing image: " + image.getOriginalFilename() + " (" + image.getSize() + " bytes)");
             
-            // TODO: Call AI model service to process the image
-            // AIModelResponse result = aiModelService.processImage(image);
+            // Call AI model service to process the image
+            AIModelResponse response = aiModelService.processImage(image);
             
-            // Temporary response with processing time
-            long processingTime = System.currentTimeMillis() - startTime;
-            AIModelResponse response = new AIModelResponse(
-                "Image processed successfully", 
-                0.95, 
-                "TempModel-v1.0", 
-                processingTime
-            );
-            
-            Log.info("Image analysis completed successfully in " + processingTime + "ms");
+            Log.info("Image analysis completed successfully in " + response.getProcessingTimeMs() + "ms");
             return ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(response);
                 
+        } catch (AIServiceException e) {
+            Log.error("AI service error: " + e.getMessage());
+            ErrorResponse errorResponse = new ErrorResponse("AI Service Error", e.getMessage(), e.getStatusCode());
+            return ResponseEntity
+                .status(HttpStatus.valueOf(e.getStatusCode()))
+                .body(errorResponse);
         } catch (Exception e) {
-            Log.error("Error processing image: " + e.getMessage());
+            Log.error("Unexpected error processing image: " + e.getMessage());
             ErrorResponse errorResponse = new ErrorResponse("Internal Server Error", "Failed to process image", 500);
             return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
