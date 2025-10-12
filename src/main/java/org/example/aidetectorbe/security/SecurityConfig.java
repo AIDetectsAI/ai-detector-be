@@ -1,6 +1,7 @@
 package org.example.aidetectorbe.security;
 
 import lombok.AllArgsConstructor;
+import org.springframework.context.annotation.Profile;
 import org.example.aidetectorbe.services.CustomOAuth2UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -16,6 +17,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 
 
 @Configuration
+@Profile("!local")
 @EnableWebSecurity
 @AllArgsConstructor
 public class SecurityConfig {

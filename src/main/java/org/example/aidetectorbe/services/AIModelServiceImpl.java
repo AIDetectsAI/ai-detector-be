@@ -31,6 +31,9 @@ public class AIModelServiceImpl implements AIModelService {
     
     @Value("${ai.service.model-name:AIDetector}")
     private String modelName;
+
+    @Value("${ai.service.file-field:file}")
+    private String aiServiceFileField;
     
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
@@ -44,36 +47,57 @@ public class AIModelServiceImpl implements AIModelService {
     public AIModelResponse processImage(MultipartFile image) throws AIServiceException {
         long startTime = System.currentTimeMillis();
         
-        Log.info("Sending image to AI service: " + aiServiceUrl + aiServiceEndpoint);
+        Log.info("=== AI Service Call Debug ===");
+        Log.info("Target URL: " + aiServiceUrl + aiServiceEndpoint);
+        Log.info("Image filename: " + image.getOriginalFilename());
+        Log.info("Image size: " + image.getSize() + " bytes");
+        Log.info("Image content type: " + image.getContentType());
         
         try {
             // Prepare the request
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.MULTIPART_FORM_DATA);
             
-            // Create multipart body
+            // Create multipart body and attach the file under configured field name
             MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
-            
+
             // Convert MultipartFile to ByteArrayResource for RestTemplate
             ByteArrayResource imageResource = new ByteArrayResource(image.getBytes()) {
                 @Override
                 public String getFilename() {
                     return image.getOriginalFilename();
                 }
+                @Override
+                public long contentLength() {
+                    return image.getSize();
+                }
             };
-            
-            body.add("image", imageResource);
-            
+
+            // Use an HttpEntity wrapper for the file part so we can set part headers explicitly
+            HttpHeaders filePartHeaders = new HttpHeaders();
+            filePartHeaders.setContentDispositionFormData(aiServiceFileField, image.getOriginalFilename());
+            filePartHeaders.setContentType(MediaType.parseMediaType(image.getContentType() != null ? image.getContentType() : "application/octet-stream"));
+
+            HttpEntity<ByteArrayResource> filePart = new HttpEntity<>(imageResource, filePartHeaders);
+
+            body.add(aiServiceFileField, filePart);
+            body.add("type", "image");
+
             HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
             
             // Make the request
             String fullUrl = aiServiceUrl + aiServiceEndpoint;
+            Log.info("Making POST request to: " + fullUrl);
+            
             ResponseEntity<String> response = restTemplate.exchange(
                 fullUrl,
                 HttpMethod.POST,
                 requestEntity,
                 String.class
             );
+            
+            Log.info("AI service response status: " + response.getStatusCode());
+            Log.info("AI service response body: " + response.getBody());
             
             // Parse response
             if (response.getStatusCode() == HttpStatus.OK) {
