@@ -34,7 +34,6 @@ public class AIModelController {
         Log.info("Received request to analyze image with AI model from user: " + authenticatedUser);
         
         try {
-            // Validate image file
             if (image.isEmpty()) {
                 Log.error("No image file provided");
                 ErrorResponse errorResponse = new ErrorResponse("Bad Request", "No image file provided", 400);
@@ -43,7 +42,6 @@ public class AIModelController {
                     .body(errorResponse);
             }
             
-            // Validate file size (using configured limit)
             long maxFileSizeBytes = maxFileSize.toBytes();
             if (image.getSize() > maxFileSizeBytes) {
                 Log.error("File size too large: " + image.getSize() + " bytes (max: " + maxFileSizeBytes + " bytes)");
@@ -54,7 +52,6 @@ public class AIModelController {
                     .body(errorResponse);
             }
             
-            // Validate file type
             String contentType = image.getContentType();
             if (contentType == null || !contentType.startsWith("image/")) {
                 Log.error("Invalid file type: " + contentType);
@@ -66,7 +63,6 @@ public class AIModelController {
             
             Log.info("Processing image: " + image.getOriginalFilename() + " (" + image.getSize() + " bytes)");
             
-            // Call AI model service to process the image
             AIModelResponse response = aiModelService.processImage(image);
             
             Log.info("Image analysis completed successfully in " + response.getProcessingTimeMs() + "ms");

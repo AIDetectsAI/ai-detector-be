@@ -60,14 +60,11 @@ public class AIModelServiceImpl implements AIModelService {
         Log.info("Image content type: " + image.getContentType());
         
         try {
-            // Prepare the request
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.MULTIPART_FORM_DATA);
             
-            // Create multipart body and attach the file under configured field name
             MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
 
-            // Convert MultipartFile to ByteArrayResource for RestTemplate
             ByteArrayResource imageResource = new ByteArrayResource(image.getBytes()) {
                 @Override
                 public String getFilename() {
@@ -79,7 +76,6 @@ public class AIModelServiceImpl implements AIModelService {
                 }
             };
 
-            // Use an HttpEntity wrapper for the file part so we can set part headers explicitly
             HttpHeaders filePartHeaders = new HttpHeaders();
             filePartHeaders.setContentDispositionFormData(aiServiceFileField, image.getOriginalFilename());
             filePartHeaders.setContentType(MediaType.parseMediaType(image.getContentType() != null ? image.getContentType() : "application/octet-stream"));
@@ -91,7 +87,6 @@ public class AIModelServiceImpl implements AIModelService {
 
             HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
             
-            // Make the request
             String fullUrl = aiServiceUrl + aiServiceEndpoint;
             Log.info("Making POST request to: " + fullUrl);
             
@@ -105,7 +100,6 @@ public class AIModelServiceImpl implements AIModelService {
             Log.info("AI service response status: " + response.getStatusCode());
             Log.info("AI service response body: " + response.getBody());
             
-            // Parse response
             if (response.getStatusCode() == HttpStatus.OK) {
                 return parseSuccessfulResponse(response.getBody(), startTime);
             } else {
@@ -146,8 +140,6 @@ public class AIModelServiceImpl implements AIModelService {
         try {
             JsonNode jsonResponse = objectMapper.readTree(responseBody);
             
-            // Extract response fields - adjust these based on your AI service's response format
-
             Double certainty = jsonResponse.has("certainty") ?
                 jsonResponse.get("certainty").asDouble() :
                 null;
