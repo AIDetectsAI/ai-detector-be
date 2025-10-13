@@ -37,10 +37,16 @@ public class AIModelServiceImpl implements AIModelService {
     
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
-    
+
+    // Default constructor used by Spring in production
     public AIModelServiceImpl() {
-        this.restTemplate = new RestTemplate();
-        this.objectMapper = new ObjectMapper();
+        this(new RestTemplate(), new ObjectMapper());
+    }
+
+    // Constructor for tests to inject mockable RestTemplate/ObjectMapper
+    public AIModelServiceImpl(RestTemplate restTemplate, ObjectMapper objectMapper) {
+        this.restTemplate = restTemplate;
+        this.objectMapper = objectMapper;
     }
     
     @Override
@@ -141,21 +147,19 @@ public class AIModelServiceImpl implements AIModelService {
             JsonNode jsonResponse = objectMapper.readTree(responseBody);
             
             // Extract response fields - adjust these based on your AI service's response format
-            String result = jsonResponse.has("prediction") ? 
-                jsonResponse.get("prediction").asText() : 
-                "Image processed successfully";
-                
-            Double confidence = jsonResponse.has("confidence") ? 
-                jsonResponse.get("confidence").asDouble() : 
+
+            Double certainty = jsonResponse.has("certainty") ?
+                jsonResponse.get("certainty").asDouble() :
                 null;
-            
+            String result = certainty != null ? (certainty >= 0.5 ? "AI-Generated" : "Human-Made") : "Image processed successfully";
+
             long processingTime = System.currentTimeMillis() - startTime;
             
             Log.info("AI service response parsed successfully in " + processingTime + "ms");
             
             return new AIModelResponse(
                 result,
-                confidence,
+                certainty,
                 modelName,
                 processingTime
             );
