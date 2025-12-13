@@ -77,7 +77,6 @@ public class AIModelServiceImplTest {
         mockServer.verify();
         // then
         assertThat(resp).isNotNull();
-        assertThat(resp.getResult()).isEqualTo("AI-Generated");
         assertThat(resp.getCertainty()).isCloseTo(0.95d, withinPercentage(0.1d));
         assertThat(resp.getModelUsed()).isEqualTo("TestModel");
         assertThat(resp.getProcessingTimeMs()).isGreaterThanOrEqualTo(0L);

@@ -44,7 +44,7 @@ public class AIModelControllerTest {
         // given
         MockMultipartFile image = new MockMultipartFile("image", "test.jpg", "image/jpeg", "hello".getBytes());
         //when
-        AIModelResponse resp = new AIModelResponse("cat", 0.95, "TestModel", 123L);
+        AIModelResponse resp = new AIModelResponse( 0.95, "TestModel", 123L);
         Mockito.when(aiModelService.processImage(any())).thenReturn(resp);
         // then
         mockMvc.perform(multipart("/api/useModel").file(image)
