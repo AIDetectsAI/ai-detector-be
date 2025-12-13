@@ -6,7 +6,6 @@ import lombok.Data;
 @Data
 @AllArgsConstructor
 public class AIModelResponse {
-    private String result;
     private Double certainty;
     private String modelUsed;
     private Long processingTimeMs;

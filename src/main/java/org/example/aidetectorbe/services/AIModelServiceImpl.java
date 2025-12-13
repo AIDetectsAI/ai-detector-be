@@ -143,14 +143,12 @@ public class AIModelServiceImpl implements AIModelService {
             Double certainty = jsonResponse.has("certainty") ?
                 jsonResponse.get("certainty").asDouble() :
                 null;
-            String result = certainty != null ? (certainty >= 0.5 ? "AI-Generated" : "Human-Made") : "Image processed successfully";
 
             long processingTime = System.currentTimeMillis() - startTime;
             
             Log.info("AI service response parsed successfully in " + processingTime + "ms");
             
             return new AIModelResponse(
-                result,
                 certainty,
                 modelName,
                 processingTime
