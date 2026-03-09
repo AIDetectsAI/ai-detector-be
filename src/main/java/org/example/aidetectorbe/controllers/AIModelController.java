@@ -1,5 +1,10 @@
 package org.example.aidetectorbe.controllers;
 
+import java.io.ByteArrayInputStream;
+
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+
 import org.example.aidetectorbe.dto.AIModelResponse;
 import org.example.aidetectorbe.dto.ErrorResponse;
 import org.example.aidetectorbe.exceptions.AIServiceException;
@@ -34,6 +39,14 @@ public class AIModelController {
         Log.info("Received request to analyze image with AI model from user: " + authenticatedUser);
         
         try {
+            BufferedImage buffim = ImageIO.read(new ByteArrayInputStream(image.getBytes()));
+            if (buffim == null) {
+                Log.error("File for /useModel was not an image");
+                ErrorResponse errorResponse = new ErrorResponse("Bad Request", "Provided file was not an image", 400);
+                return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body(errorResponse);
+            }
             if (image.isEmpty()) {
                 Log.error("No image file provided");
                 ErrorResponse errorResponse = new ErrorResponse("Bad Request", "No image file provided", 400);
