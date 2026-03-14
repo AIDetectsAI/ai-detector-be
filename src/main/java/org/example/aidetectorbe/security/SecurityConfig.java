@@ -15,7 +15,6 @@ import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
-
 @Configuration
 @Profile("!local")
 @EnableWebSecurity
@@ -36,9 +35,13 @@ public class SecurityConfig {
 
         http.csrf(AbstractHttpConfigurer::disable)
 
-                .authorizeHttpRequests(auth -> auth.requestMatchers("/auth/**").permitAll().anyRequest().authenticated())
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/auth/**").permitAll()
+                        .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
+                        .anyRequest().authenticated())
 
-                .oauth2Login(oauth -> oauth.userInfoEndpoint(userInfo -> userInfo.userService(oauth2UserService())).defaultSuccessUrl("http://localhost:4321/", true))
+                .oauth2Login(oauth -> oauth.userInfoEndpoint(userInfo -> userInfo.userService(oauth2UserService()))
+                        .defaultSuccessUrl("http://localhost:4321/", true))
 
                 .cors(cors -> cors.disable())
                 .exceptionHandling(exception -> exception.authenticationEntryPoint(unauthorizedHandler));

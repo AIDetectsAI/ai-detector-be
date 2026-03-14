@@ -117,7 +117,7 @@ class UserServiceTest {
         user.setProvider(AI_DETECTOR_API_PROVIDER);
 
         // mocking
-        when(mockPasswordHasher.hashPassword("password")).thenReturn("hashedPassword");
+        when(mockPasswordHasher.verifyPassword("password", "hashedPassword")).thenReturn(true);
         when(mockUserRepository.findByLoginAndProvider("JohnParadox", AI_DETECTOR_API_PROVIDER)).thenReturn(Optional.of(user));
 
         // when
