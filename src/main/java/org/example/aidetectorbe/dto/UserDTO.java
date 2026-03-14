@@ -16,7 +16,7 @@ public class UserDTO {
 
     @NotNull(message = "password cannot be null")
     @NotBlank(message = "password cannot be blank")
-    @Pattern(regexp = "^(?=.*[A-Z])(?=.*\\d)(?=.*[!@#$%^&*()_+\\-=[\\]{}|;:'\",.<>/?~]).{8,}$", message = "password must be at least 8 chars, include an uppercase letter, a digit and a special character")
+    @Pattern(regexp = "^(?=.*[A-Z])(?=.*\\d)(?=.*[!@#$%^&*()_+\\-\\[\\]{}|;:'\\\",.<>/?~]).{8,}$", message = "password must be at least 8 chars, include an uppercase letter, a digit and a special character")
     private String password;
 
     @NotBlank

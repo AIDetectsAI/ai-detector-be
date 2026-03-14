@@ -32,6 +32,14 @@ public class UserController {
                     .status(HttpStatus.BAD_REQUEST)
                     .body("invalid data: " + result.getAllErrors());
         }
+
+        if (userService.existsByLoginAndProvider(userDTO.getLogin(), AI_DETECTOR_API_PROVIDER)) {
+            Log.error("Register request failed: user with login already exists");
+            return ResponseEntity
+                    .status(HttpStatus.CONFLICT)
+                    .body("User with this login already exists");
+        }
+
         UUID userId = userService.createDefaultUser(userDTO);
         Log.info("User with id " + userId + " has been created");
         String message = "User with login " + userDTO.getLogin() + " has been created";

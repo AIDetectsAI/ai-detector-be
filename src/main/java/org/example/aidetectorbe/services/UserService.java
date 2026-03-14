@@ -30,6 +30,10 @@ public class UserService {
         return user.getId();
     }
 
+    public boolean existsByLoginAndProvider(String login, String provider) {
+        return userRepository.findByLoginAndProvider(login, provider).isPresent();
+    }
+
     public boolean verifyUserByLoginAndProvider(UserDTO userDTO, String provider) {
         User user = userRepository.findByLoginAndProvider(userDTO.getLogin(), provider).orElse(null);
         if (user == null){
