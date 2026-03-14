@@ -27,7 +27,7 @@ public class UserController {
     public ResponseEntity<?> createUser(@Valid @RequestBody UserDTO userDTO, BindingResult result) {
         Log.info("Received a request to register a new user");
         if (result.hasErrors()) {
-            Log.error("Request contained invalid data");
+            Log.error("Register request contained invalid data");
             return ResponseEntity
                     .status(HttpStatus.BAD_REQUEST)
                     .body("invalid data: " + result.getAllErrors());
@@ -39,8 +39,14 @@ public class UserController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> loginUser(@Valid @RequestBody UserDTO userDTO) {
+    public ResponseEntity<?> loginUser(@Valid @RequestBody UserDTO userDTO, BindingResult result) {
         Log.info(String.format("Attempting to log in with login '%s'", userDTO.getLogin()));
+        if (result.hasErrors()) {
+            Log.error("Login request contained invalid data");
+            return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body("invalid data: " + result.getAllErrors());
+        }
         if (!userService.verifyUserByLoginAndProvider(userDTO, AI_DETECTOR_API_PROVIDER)){
             Log.info(String.format("Invalid password for attempted login as '%s'", userDTO.getLogin()));
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User does not exist or invalid password");
