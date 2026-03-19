@@ -1,4 +1,4 @@
-package org.example.aidetectorbe.logger;
+package org.example.aidetectorbe.utils.logger;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;

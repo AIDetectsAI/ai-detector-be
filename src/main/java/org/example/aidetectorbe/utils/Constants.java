@@ -1,4 +1,4 @@
-package org.example.aidetectorbe;
+package org.example.aidetectorbe.utils;
 
 public class Constants {
 
