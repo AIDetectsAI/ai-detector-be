@@ -2,7 +2,7 @@ package org.example.aidetectorbe.services;
 
 import de.mkammerer.argon2.Argon2;
 import de.mkammerer.argon2.Argon2Factory;
-import org.example.aidetectorbe.logger.Log;
+import org.example.aidetectorbe.utils.logger.Log;
 import org.springframework.stereotype.Service;
 
 @Service

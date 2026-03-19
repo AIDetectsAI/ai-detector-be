@@ -3,10 +3,9 @@ package org.example.aidetectorbe.services;
 import lombok.AllArgsConstructor;
 import org.example.aidetectorbe.entities.Role;
 import org.example.aidetectorbe.entities.User;
-import org.example.aidetectorbe.logger.Log;
+import org.example.aidetectorbe.utils.logger.Log;
 import org.example.aidetectorbe.repository.RoleRepository;
 import org.example.aidetectorbe.repository.UserRepository;
-import org.springframework.context.annotation.Bean;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -22,7 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static org.example.aidetectorbe.Constants.GITHUB_API_PROVIDER;
+import static org.example.aidetectorbe.utils.Constants.GITHUB_API_PROVIDER;
 
 @Service
 @AllArgsConstructor

@@ -21,8 +21,8 @@ import org.springframework.web.client.RestTemplate;
 
 import java.util.*;
 
-import static org.example.aidetectorbe.Constants.DEFAULT_USER_ROLE;
-import static org.example.aidetectorbe.Constants.GITHUB_API_PROVIDER;
+import static org.example.aidetectorbe.utils.Constants.DEFAULT_USER_ROLE;
+import static org.example.aidetectorbe.utils.Constants.GITHUB_API_PROVIDER;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
