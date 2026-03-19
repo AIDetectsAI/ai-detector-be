@@ -24,8 +24,10 @@ public class UserService {
 
     public UUID createDefaultUser(UserDTO userDTO) {
         Set<Role> roles = new java.util.HashSet<>();
-        roles.add(roleRepository.findByName(DEFAULT_USER_ROLE).orElseThrow(() -> new RuntimeException("Default role USER not found")));
-        User user = new User(userDTO.getLogin(), passwordHasher.hashPassword(userDTO.getPassword()), userDTO.getEmail(), AI_DETECTOR_API_PROVIDER, null, roles);
+        roles.add(roleRepository.findByName(DEFAULT_USER_ROLE)
+                .orElseThrow(() -> new RuntimeException("Default role USER not found")));
+        User user = new User(userDTO.getLogin(), passwordHasher.hashPassword(userDTO.getPassword()), userDTO.getEmail(),
+                AI_DETECTOR_API_PROVIDER, null, roles);
         userRepository.save(user);
         return user.getId();
     }
@@ -36,16 +38,16 @@ public class UserService {
 
     public boolean verifyUserByLoginAndProvider(UserDTO userDTO, String provider) {
         User user = userRepository.findByLoginAndProvider(userDTO.getLogin(), provider).orElse(null);
-        if (user == null){
+        if (user == null) {
             return false;
         }
         if (!user.getProvider().equals(provider)) {
             return false;
         }
-        return passwordHasher.hashPassword(userDTO.getPassword()).equals(user.getPassword());
+        return passwordHasher.verifyPassword(userDTO.getPassword(), user.getPassword());
     }
 
-    public String getTokenByLogin(String login){
+    public String getTokenByLogin(String login) {
         return jwtUtil.generateToken(login);
     }
 }
