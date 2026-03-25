@@ -1,10 +1,11 @@
 package org.example.aidetectorbe.security;
 
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Profile;
 import org.example.aidetectorbe.services.CustomOAuth2UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -15,16 +16,19 @@ import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
-
 @Configuration
 @Profile("!local")
 @EnableWebSecurity
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class SecurityConfig {
 
     private final CustomOAuth2UserService customOAuth2UserService;
+
     @Autowired
     private AuthEntryPointJwt unauthorizedHandler;
+
+    @Value("${app.default.success-url}")
+    private String defaultSuccessUrl;
 
     @Bean
     public OAuth2UserService<OAuth2UserRequest, OAuth2User> oauth2UserService() {
@@ -36,9 +40,13 @@ public class SecurityConfig {
 
         http.csrf(AbstractHttpConfigurer::disable)
 
-                .authorizeHttpRequests(auth -> auth.requestMatchers("/auth/**").permitAll().anyRequest().authenticated())
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/auth/**").permitAll()
+                        .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
+                        .anyRequest().authenticated())
 
-                .oauth2Login(oauth -> oauth.userInfoEndpoint(userInfo -> userInfo.userService(oauth2UserService())).defaultSuccessUrl("http://localhost:4321/", true))
+                .oauth2Login(oauth -> oauth.userInfoEndpoint(userInfo -> userInfo.userService(oauth2UserService()))
+                        .defaultSuccessUrl(defaultSuccessUrl, true))
 
                 .cors(cors -> cors.disable())
                 .exceptionHandling(exception -> exception.authenticationEntryPoint(unauthorizedHandler));
