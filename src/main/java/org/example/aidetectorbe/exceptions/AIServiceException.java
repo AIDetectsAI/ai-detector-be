@@ -1,14 +1,12 @@
 package org.example.aidetectorbe.exceptions;
 
+import lombok.Getter;
+
+@Getter
 public class AIServiceException extends Exception {
     
     private final int statusCode;
-    
-    public AIServiceException(String message) {
-        super(message);
-        this.statusCode = 500;
-    }
-    
+
     public AIServiceException(String message, int statusCode) {
         super(message);
         this.statusCode = statusCode;
@@ -23,8 +21,5 @@ public class AIServiceException extends Exception {
         super(message, cause);
         this.statusCode = statusCode;
     }
-    
-    public int getStatusCode() {
-        return statusCode;
-    }
+
 }

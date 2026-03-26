@@ -2,7 +2,7 @@ package org.example.aidetectorbe.services;
 
 import org.example.aidetectorbe.dto.AIModelResponse;
 import org.example.aidetectorbe.exceptions.AIServiceException;
-import org.example.aidetectorbe.logger.Log;
+import org.example.aidetectorbe.utils.logger.Log;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.*;

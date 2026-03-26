@@ -18,7 +18,7 @@ import static org.mockito.Mockito.never;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import static org.example.aidetectorbe.Constants.AI_DETECTOR_API_PROVIDER;
+import static org.example.aidetectorbe.utils.Constants.AI_DETECTOR_API_PROVIDER;
 public class UserControllerTest {
 
     private MockMvc mockMvc;
