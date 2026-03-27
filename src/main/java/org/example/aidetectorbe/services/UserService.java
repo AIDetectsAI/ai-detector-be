@@ -10,8 +10,8 @@ import org.example.aidetectorbe.security.JwtUtil;
 import org.springframework.stereotype.Service;
 import java.util.Set;
 import java.util.UUID;
-import static org.example.aidetectorbe.Constants.AI_DETECTOR_API_PROVIDER;
-import static org.example.aidetectorbe.Constants.DEFAULT_USER_ROLE;
+import static org.example.aidetectorbe.utils.Constants.AI_DETECTOR_API_PROVIDER;
+import static org.example.aidetectorbe.utils.Constants.DEFAULT_USER_ROLE;
 
 @Service
 @AllArgsConstructor
@@ -30,6 +30,10 @@ public class UserService {
                 AI_DETECTOR_API_PROVIDER, null, roles);
         userRepository.save(user);
         return user.getId();
+    }
+
+    public boolean existsByLoginAndProvider(String login, String provider) {
+        return userRepository.findByLoginAndProvider(login, provider).isPresent();
     }
 
     public boolean verifyUserByLoginAndProvider(UserDTO userDTO, String provider) {

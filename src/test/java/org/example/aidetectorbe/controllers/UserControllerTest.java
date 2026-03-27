@@ -18,7 +18,7 @@ import static org.mockito.Mockito.never;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import static org.example.aidetectorbe.Constants.AI_DETECTOR_API_PROVIDER;
+import static org.example.aidetectorbe.utils.Constants.AI_DETECTOR_API_PROVIDER;
 public class UserControllerTest {
 
     private MockMvc mockMvc;
@@ -35,7 +35,7 @@ public class UserControllerTest {
 
     @Test
     void testCreateUser_GivenValidData_ShouldReturnCreatedStatus() throws Exception {
-        UserDTO userDTO = new UserDTO("login123", "pass123", "email@example.com");
+        UserDTO userDTO = new UserDTO("login123", "Passw0rd!", "email@example.com");
         UUID uuid = UUID.randomUUID();
         when(mockUserService.createDefaultUser(any(UserDTO.class))).thenReturn(uuid);
         String message = "User with login " + userDTO.getLogin() + " has been created";
@@ -51,8 +51,22 @@ public class UserControllerTest {
     }
 
     @Test
+    void testCreateUser_GivenExistingLogin_ShouldReturnConflict() throws Exception {
+        UserDTO userDTO = new UserDTO("login123", "Passw0rd!", "email@example.com");
+        when(mockUserService.existsByLoginAndProvider(userDTO.getLogin(), AI_DETECTOR_API_PROVIDER)).thenReturn(true);
+
+        mockMvc.perform(post("/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(userDTO)))
+                .andExpect(status().isConflict())
+                .andExpect(content().string("User with this login already exists"));
+
+        verify(mockUserService, never()).createDefaultUser(any(UserDTO.class));
+    }
+
+    @Test
     void testCreateUser_GivenNullLogin_ShouldReturnBadRequest() throws Exception {
-        UserDTO userDTO = new UserDTO(null, "pass123", "email@example.com");
+        UserDTO userDTO = new UserDTO(null, "Passw0rd!", "email@example.com");
 
         mockMvc.perform(post("/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -65,7 +79,7 @@ public class UserControllerTest {
 
     @Test
     void testCreateUser_GivenInvalidEmail_ShouldReturnBadRequest() throws Exception {
-        UserDTO userDTO = new UserDTO("login123", "pass123", "invalid-email");
+        UserDTO userDTO = new UserDTO("login123", "Passw0rd!", "invalid-email");
 
         mockMvc.perform(post("/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -79,7 +93,7 @@ public class UserControllerTest {
     @Test
     void testLoginUser_GivenCorrectCredentials_ShouldReturnToken() throws Exception {
         // given
-        UserDTO userDTO = new UserDTO("JohnParadox", "password", "mail@mail.mail");
+        UserDTO userDTO = new UserDTO("JohnParadox", "Passw0rd!", "mail@mail.mail");
 
         // mock
         when(mockUserService.verifyUserByLoginAndProvider(userDTO, AI_DETECTOR_API_PROVIDER)).thenReturn(true);
@@ -99,7 +113,7 @@ public class UserControllerTest {
     @Test
     void testLoginUser_GivenIncorrectCredentials_ShouldReturnUnauthorized() throws Exception {
         // given
-        UserDTO userDTO = new UserDTO("JohnParadox", "password", "mail@mail.mail");
+        UserDTO userDTO = new UserDTO("JohnParadox", "Passw0rd!", "mail@mail.mail");
 
         // mock
         when(mockUserService.verifyUserByLoginAndProvider(userDTO, AI_DETECTOR_API_PROVIDER)).thenReturn(false);
