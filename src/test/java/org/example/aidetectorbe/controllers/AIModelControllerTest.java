@@ -51,7 +51,7 @@ public class AIModelControllerTest {
                 .contentType(MediaType.MULTIPART_FORM_DATA))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(content().string(containsString("cat")));
+                .andExpect(content().string(containsString("certainty")));
     }
 
     @Test
