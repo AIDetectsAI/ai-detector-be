@@ -23,11 +23,11 @@ public class QueryController {
     @Autowired
     private QueryService queryService;
     
-    @DeleteMapping(value = "/users/{userId}/queries/{queryId}")
-    public ResponseEntity<?> deleteQuery(@PathVariable Long queryId, @PathVariable Long userId) {
-        Log.info("Received a request to remove a query: " + queryId + " from user: " + userId);
+    @DeleteMapping(value = "/users/{userLogin}/queries/{queryId}")
+    public ResponseEntity<?> deleteQuery(@PathVariable Long queryId, @PathVariable String userLogin) {
+        Log.info("Received a request to remove a query: " + queryId + " from user: " + userLogin);
         try {
-            queryService.deleteQuery(queryId, userId);
+            queryService.deleteQuery(queryId, userLogin);
         } catch (EntityNotFoundException e) {
             Log.error("Didn't find the query to delete: " + e.getMessage());
             ErrorResponse errorResponse = new ErrorResponse("AI Service Error", e.getMessage(), 404);

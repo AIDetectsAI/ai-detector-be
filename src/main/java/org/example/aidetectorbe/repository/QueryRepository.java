@@ -1,0 +1,9 @@
+package org.example.aidetectorbe.repository;
+
+import org.example.aidetectorbe.entities.Query;
+import org.springframework.data.jpa.repository.JpaRepository;
+import java.util.Optional;
+
+public interface QueryRepository extends JpaRepository<Query, Long> {
+    Optional<Query> findByIdAndUserLogin(Long queryId, String login);
+}
