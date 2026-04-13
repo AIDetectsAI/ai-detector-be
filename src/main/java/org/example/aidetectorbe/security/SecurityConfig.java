@@ -27,7 +27,7 @@ public class SecurityConfig {
     @Autowired
     private AuthEntryPointJwt unauthorizedHandler;
 
-    @Value("${app.default.success-url}")
+    @Value("${app.default.success-url:/}")
     private String defaultSuccessUrl;
 
     @Bean
