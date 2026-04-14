@@ -64,4 +64,21 @@ public class QueryControllerTest {
 
         verify(mockQueryService).deleteQuery(queryId, userLogin);
     }
+
+    @Test
+    void testDeleteQuery_GivenDifferentQueryIds_ShouldCallServiceWithCorrectIds() throws Exception {
+        // given
+        Long queryId1 = 5L;
+        Long queryId2 = 10L;
+        String userLogin = "testUser";
+
+        // when & then
+        mockMvc.perform(delete("/api/users/{userLogin}/queries/{queryId}", userLogin, queryId1))
+                .andExpect(status().isNoContent());
+        verify(mockQueryService).deleteQuery(queryId1, userLogin);
+
+        mockMvc.perform(delete("/api/users/{userLogin}/queries/{queryId}", userLogin, queryId2))
+                .andExpect(status().isNoContent());
+        verify(mockQueryService).deleteQuery(queryId2, userLogin);
+    }
 }
