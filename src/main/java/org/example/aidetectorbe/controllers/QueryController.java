@@ -13,11 +13,13 @@ import org.springframework.web.bind.annotation.RestController;
 
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.websocket.server.PathParam;
+import lombok.AllArgsConstructor;
 
 import org.example.aidetectorbe.dto.ErrorResponse;
 
 @RestController
 @RequestMapping("/api")
+@AllArgsConstructor
 public class QueryController {
 
     @Autowired
@@ -30,7 +32,7 @@ public class QueryController {
             queryService.deleteQuery(queryId, userLogin);
         } catch (EntityNotFoundException e) {
             Log.error("Didn't find the query to delete: " + e.getMessage());
-            ErrorResponse errorResponse = new ErrorResponse("AI Service Error", e.getMessage(), 404);
+            ErrorResponse errorResponse = new ErrorResponse("Delete query rror", e.getMessage(), 404);
             return ResponseEntity
                 .status(HttpStatus.NOT_FOUND)
                 .body(errorResponse);

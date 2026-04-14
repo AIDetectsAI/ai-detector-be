@@ -5,5 +5,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.Optional;
 
 public interface QueryRepository extends JpaRepository<Query, Long> {
-    Optional<Query> findByIdAndUserLogin(Long queryId, String login);
+    Optional<Query> findByIdAndUser_Login(Long queryId, String login);
 }
