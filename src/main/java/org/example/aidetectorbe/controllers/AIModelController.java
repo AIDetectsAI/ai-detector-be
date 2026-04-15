@@ -9,7 +9,7 @@ import java.awt.image.BufferedImage;
 import org.example.aidetectorbe.dto.AIModelResponse;
 import org.example.aidetectorbe.dto.ErrorResponse;
 import org.example.aidetectorbe.exceptions.AIServiceException;
-import org.example.aidetectorbe.logger.Log;
+import org.example.aidetectorbe.utils.logger.Log;
 import org.example.aidetectorbe.services.AIModelService;
 import org.example.aidetectorbe.services.CloudStorageService;
 import org.springframework.beans.factory.annotation.Autowired;

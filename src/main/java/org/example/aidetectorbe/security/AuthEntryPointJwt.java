@@ -2,7 +2,7 @@ package org.example.aidetectorbe.security;
 
 import org.springframework.stereotype.Component;
 import org.example.aidetectorbe.dto.ErrorResponse;
-import org.example.aidetectorbe.logger.Log;
+import org.example.aidetectorbe.utils.logger.Log;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import jakarta.servlet.http.HttpServletRequest;
