@@ -1,8 +1,11 @@
 package org.example.aidetectorbe.services;
 
 import org.example.aidetectorbe.dto.AIModelResponse;
+import org.example.aidetectorbe.entities.QueryRecord;
 import org.example.aidetectorbe.exceptions.AIServiceException;
+import org.example.aidetectorbe.repository.QueryRecordRepository;
 import org.example.aidetectorbe.utils.logger.Log;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.*;
@@ -16,6 +19,9 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
+import java.util.Optional;
+import java.util.UUID;
 
 @Service
 public class AIModelServiceImpl implements AIModelService {
@@ -38,19 +44,20 @@ public class AIModelServiceImpl implements AIModelService {
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
 
-    // Default constructor used by Spring in production
+    @Autowired
+    private QueryRecordRepository queryRecordRepository;
+
     public AIModelServiceImpl() {
         this(new RestTemplate(), new ObjectMapper());
     }
 
-    // Constructor for tests to inject mockable RestTemplate/ObjectMapper
     public AIModelServiceImpl(RestTemplate restTemplate, ObjectMapper objectMapper) {
         this.restTemplate = restTemplate;
         this.objectMapper = objectMapper;
     }
     
     @Override
-    public AIModelResponse processImage(MultipartFile image) throws AIServiceException {
+    public AIModelResponse processImage(MultipartFile image, String username) throws AIServiceException {
         long startTime = System.currentTimeMillis();
         
         Log.info("=== AI Service Call Debug ===");
@@ -101,7 +108,16 @@ public class AIModelServiceImpl implements AIModelService {
             Log.info("AI service response body: " + response.getBody());
             
             if (response.getStatusCode() == HttpStatus.OK) {
-                return parseSuccessfulResponse(response.getBody(), startTime);
+                AIModelResponse parsed = parseSuccessfulResponse(response.getBody(), startTime);
+                String imageId = UUID.randomUUID().toString();
+                QueryRecord record = new QueryRecord();
+                record.setImageId(imageId);
+                record.setUserLogin(username != null ? username : "");
+                record.setCertainty(parsed.getCertainty());
+                record.setModelUsed(parsed.getModelUsed());
+                record.setProcessingTimeMs(parsed.getProcessingTimeMs());
+                queryRecordRepository.save(record);
+                return new AIModelResponse(parsed.getCertainty(), parsed.getModelUsed(), parsed.getProcessingTimeMs(), imageId);
             } else {
                 throw new AIServiceException("AI service returned error status: " + response.getStatusCode(), 
                     response.getStatusCode().value());
@@ -117,10 +133,29 @@ public class AIModelServiceImpl implements AIModelService {
             Log.error("Network error connecting to AI service: " + e.getMessage());
             throw new AIServiceException("Unable to connect to AI service. Please try again later.", e, 503);
         } catch (AIServiceException e) {
-            throw e; // Re-throw our custom exceptions
+            throw e;
         } catch (Exception e) {
             Log.error("Unexpected error communicating with AI service: " + e.getMessage());
             throw new AIServiceException("Failed to process image with AI service: " + e.getMessage(), e);
+        }
+    }
+    
+    @Override
+    public AIModelResponse getPastQueryByImageId(String imageId, String username) throws AIServiceException {
+        try {
+            Optional<QueryRecord> opt = queryRecordRepository.findByImageId(imageId);
+            if (opt.isEmpty()) {
+                throw new AIServiceException("Query not found", 404);
+            }
+            QueryRecord r = opt.get();
+            if (username == null || !username.equals(r.getUserLogin())) {
+                throw new AIServiceException("Forbidden", 403);
+            }
+            return new AIModelResponse(r.getCertainty(), r.getModelUsed(), r.getProcessingTimeMs(), r.getImageId());
+        } catch (AIServiceException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new AIServiceException("Failed to retrieve past query", e);
         }
     }
     
@@ -151,7 +186,8 @@ public class AIModelServiceImpl implements AIModelService {
             return new AIModelResponse(
                 certainty,
                 modelName,
-                processingTime
+                processingTime,
+                null
             );
             
         } catch (Exception e) {

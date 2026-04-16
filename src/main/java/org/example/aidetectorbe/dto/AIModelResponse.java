@@ -9,4 +9,5 @@ public class AIModelResponse {
     private Double certainty;
     private String modelUsed;
     private Long processingTimeMs;
+    private String imageId;
 }

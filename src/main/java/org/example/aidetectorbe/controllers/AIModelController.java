@@ -76,7 +76,7 @@ public class AIModelController {
             
             Log.info("Processing image: " + image.getOriginalFilename() + " (" + image.getSize() + " bytes)");
             
-            AIModelResponse response = aiModelService.processImage(image);
+            AIModelResponse response = aiModelService.processImage(image, authenticatedUser);
             
             Log.info("Image analysis completed successfully in " + response.getProcessingTimeMs() + "ms");
             return ResponseEntity.ok()
@@ -95,6 +95,28 @@ public class AIModelController {
             return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(errorResponse);
+        }
+    }
+
+    @RequestMapping(value = "/pastQuery")
+    public ResponseEntity<?> getPastQuery(@RequestParam("imageId") String imageId, HttpServletRequest request) {
+        String authenticatedUser = (String) request.getAttribute("login");
+        Log.info("Received request to retrieve past query for user: " + authenticatedUser);
+        try {
+            if (authenticatedUser == null) {
+                ErrorResponse errorResponse = new ErrorResponse("Unauthorized", "User not authenticated", 401);
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
+            }
+            AIModelResponse response = aiModelService.getPastQueryByImageId(imageId, authenticatedUser);
+            return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(response);
+        } catch (AIServiceException e) {
+            Log.error("AI service error: " + e.getMessage());
+            ErrorResponse errorResponse = new ErrorResponse("AI Service Error", e.getMessage(), e.getStatusCode());
+            return ResponseEntity.status(HttpStatus.valueOf(e.getStatusCode())).body(errorResponse);
+        } catch (Exception e) {
+            Log.error("Unexpected error retrieving past query: " + e.getMessage());
+            ErrorResponse errorResponse = new ErrorResponse("Internal Server Error", "Failed to retrieve past query", 500);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
         }
     }
 }
