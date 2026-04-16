@@ -6,6 +6,12 @@ import org.springframework.web.multipart.MultipartFile;
 
 public interface AIModelService {
     AIModelResponse processImage(MultipartFile image, String username) throws AIServiceException;
+
+    default AIModelResponse processImage(MultipartFile image) throws AIServiceException {
+        return processImage(image, null);
+    }
+
     AIModelResponse getPastQueryByImageId(String imageId, String username) throws AIServiceException;
+
     boolean isServiceHealthy();
 }

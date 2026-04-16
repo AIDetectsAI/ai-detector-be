@@ -10,4 +10,11 @@ public class AIModelResponse {
     private String modelUsed;
     private Long processingTimeMs;
     private String imageId;
+
+    public AIModelResponse(Double certainty, String modelUsed, Long processingTimeMs) {
+        this.certainty = certainty;
+        this.modelUsed = modelUsed;
+        this.processingTimeMs = processingTimeMs;
+        this.imageId = null;
+    }
 }

@@ -12,29 +12,30 @@ import java.util.UUID;
 @Entity
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "query_records")
+@Table(name = "results")
 public class QueryRecord {
 
     @Id
-    @GeneratedValue
-    private UUID id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "result_id")
+    private Long id;
 
-    @Column(nullable = false, length = 100)
-    private String imageId;
+    @Column(name = "photo_id", nullable = false)
+    private UUID photoId;
 
-    @Column(nullable = false, length = 50)
-    private String userLogin;
+    @Column(name = "user_id", nullable = false)
+    private UUID userId;
 
-    @Column
-    private Double certainty;
+    @Column(name = "model", nullable = false, length = 50)
+    private String model;
 
-    @Column
-    private String modelUsed;
+    @Column(name = "chance", precision = 4, scale = 2, nullable = false)
+    private java.math.BigDecimal chance;
 
-    @Column
-    private Long processingTimeMs;
-
-    @Column(nullable = false, updatable = false)
+    @Column(name = "created_at", nullable = false)
     private Instant createdAt = Instant.now();
+
+    @Column(name = "is_deleted")
+    private Boolean isDeleted = false;
 
 }

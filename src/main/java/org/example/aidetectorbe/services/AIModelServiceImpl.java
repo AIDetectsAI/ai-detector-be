@@ -2,8 +2,11 @@ package org.example.aidetectorbe.services;
 
 import org.example.aidetectorbe.dto.AIModelResponse;
 import org.example.aidetectorbe.entities.QueryRecord;
+import org.example.aidetectorbe.entities.User;
 import org.example.aidetectorbe.exceptions.AIServiceException;
 import org.example.aidetectorbe.repository.QueryRecordRepository;
+import org.example.aidetectorbe.repository.UserRepository;
+import org.example.aidetectorbe.utils.Constants;
 import org.example.aidetectorbe.utils.logger.Log;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -20,6 +23,9 @@ import org.springframework.web.multipart.MultipartFile;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -46,6 +52,9 @@ public class AIModelServiceImpl implements AIModelService {
 
     @Autowired
     private QueryRecordRepository queryRecordRepository;
+
+    @Autowired
+    private UserRepository userRepository;
 
     public AIModelServiceImpl() {
         this(new RestTemplate(), new ObjectMapper());
@@ -109,15 +118,29 @@ public class AIModelServiceImpl implements AIModelService {
             
             if (response.getStatusCode() == HttpStatus.OK) {
                 AIModelResponse parsed = parseSuccessfulResponse(response.getBody(), startTime);
-                String imageId = UUID.randomUUID().toString();
+                UUID photoId = UUID.randomUUID();
+                java.util.UUID userId = null;
+                if (username != null) {
+                    Optional<User> u = userRepository.findByLoginAndProvider(username, Constants.AI_DETECTOR_API_PROVIDER);
+                    if (u.isPresent()) {
+                        userId = u.get().getId();
+                    } else {
+                        throw new AIServiceException("User not found in database", 403);
+                    }
+                } else {
+                    throw new AIServiceException("User not authenticated", 401);
+                }
+
                 QueryRecord record = new QueryRecord();
-                record.setImageId(imageId);
-                record.setUserLogin(username != null ? username : "");
-                record.setCertainty(parsed.getCertainty());
-                record.setModelUsed(parsed.getModelUsed());
-                record.setProcessingTimeMs(parsed.getProcessingTimeMs());
+                record.setPhotoId(photoId);
+                record.setUserId(userId);
+                record.setModel(parsed.getModelUsed());
+                BigDecimal chance = BigDecimal.valueOf(parsed.getCertainty() != null ? parsed.getCertainty() : 0.0)
+                        .setScale(2, RoundingMode.HALF_UP);
+                record.setChance(chance);
+                record.setCreatedAt(Instant.now());
                 queryRecordRepository.save(record);
-                return new AIModelResponse(parsed.getCertainty(), parsed.getModelUsed(), parsed.getProcessingTimeMs(), imageId);
+                return new AIModelResponse(parsed.getCertainty(), parsed.getModelUsed(), parsed.getProcessingTimeMs(), photoId.toString());
             } else {
                 throw new AIServiceException("AI service returned error status: " + response.getStatusCode(), 
                     response.getStatusCode().value());
@@ -143,15 +166,21 @@ public class AIModelServiceImpl implements AIModelService {
     @Override
     public AIModelResponse getPastQueryByImageId(String imageId, String username) throws AIServiceException {
         try {
-            Optional<QueryRecord> opt = queryRecordRepository.findByImageId(imageId);
+            UUID photoId = UUID.fromString(imageId);
+            Optional<QueryRecord> opt = queryRecordRepository.findByPhotoId(photoId);
             if (opt.isEmpty()) {
                 throw new AIServiceException("Query not found", 404);
             }
             QueryRecord r = opt.get();
-            if (username == null || !username.equals(r.getUserLogin())) {
+            if (username == null) {
+                throw new AIServiceException("Unauthorized", 401);
+            }
+            Optional<User> u = userRepository.findByLoginAndProvider(username, Constants.AI_DETECTOR_API_PROVIDER);
+            if (u.isEmpty() || !u.get().getId().equals(r.getUserId())) {
                 throw new AIServiceException("Forbidden", 403);
             }
-            return new AIModelResponse(r.getCertainty(), r.getModelUsed(), r.getProcessingTimeMs(), r.getImageId());
+            Double certainty = r.getChance() != null ? r.getChance().doubleValue() : null;
+            return new AIModelResponse(certainty, r.getModel(), null, r.getPhotoId().toString());
         } catch (AIServiceException e) {
             throw e;
         } catch (Exception e) {

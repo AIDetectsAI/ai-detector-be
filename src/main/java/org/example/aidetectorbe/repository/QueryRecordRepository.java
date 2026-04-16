@@ -6,6 +6,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.Optional;
 import java.util.UUID;
 
-public interface QueryRecordRepository extends JpaRepository<QueryRecord, UUID> {
-    Optional<QueryRecord> findByImageId(String imageId);
+public interface QueryRecordRepository extends JpaRepository<QueryRecord, Long> {
+    Optional<QueryRecord> findByPhotoId(UUID photoId);
 }
