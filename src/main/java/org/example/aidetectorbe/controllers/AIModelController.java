@@ -1,17 +1,10 @@
 package org.example.aidetectorbe.controllers;
 
-import java.io.ByteArrayInputStream;
-
-import javax.imageio.ImageIO;
-import java.awt.image.BufferedImage;
-
 import org.example.aidetectorbe.dto.AIModelResponse;
 import org.example.aidetectorbe.dto.ErrorResponse;
 import org.example.aidetectorbe.exceptions.AIServiceException;
+import org.example.aidetectorbe.services.ModelAnalysisFlowService;
 import org.example.aidetectorbe.utils.logger.Log;
-import org.example.aidetectorbe.services.AIModelService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -28,62 +21,37 @@ import jakarta.servlet.http.HttpServletRequest;
 @RequestMapping("/api")
 public class AIModelController {
 
-    @Value("${spring.servlet.multipart.max-file-size}")
-    private DataSize maxFileSize;
+    private final ModelAnalysisFlowService modelAnalysisFlowService;
 
-    @Autowired
-    private AIModelService aiModelService;
+    public AIModelController(ModelAnalysisFlowService modelAnalysisFlowService) {
+        this.modelAnalysisFlowService = modelAnalysisFlowService;
+    }
 
-    @PostMapping(value = "/useModel", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping(value = {"/useModel", "/model/analyze"}, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> useModel(@RequestParam("image") MultipartFile image, HttpServletRequest request) {
         String authenticatedUser = (String) request.getAttribute("login");
         Log.info("Received request to analyze image with AI model from user: " + authenticatedUser);
         
         try {
-            if (image.isEmpty() || image.getSize() == 0) {
-                Log.error("Empty file provided for /useModel");
-                ErrorResponse errorResponse = new ErrorResponse("Bad Request", "Empty file provided", 400);
-                return ResponseEntity
-                    .status(HttpStatus.BAD_REQUEST)
-                    .body(errorResponse);
-            }
-            BufferedImage buffim = ImageIO.read(new ByteArrayInputStream(image.getBytes()));
-            if (buffim == null) {
-                Log.error("File for /useModel was not an image");
-                ErrorResponse errorResponse = new ErrorResponse("Bad Request", "Provided file was not an image", 400);
-                return ResponseEntity
-                    .status(HttpStatus.BAD_REQUEST)
-                    .body(errorResponse);
-            }
-            
-            long maxFileSizeBytes = maxFileSize.toBytes();
-            if (image.getSize() > maxFileSizeBytes) {
-                Log.error("File size too large: " + image.getSize() + " bytes (max: " + maxFileSizeBytes + " bytes)");
-                ErrorResponse errorResponse = new ErrorResponse("Bad Request", 
-                    "File size too large. Maximum allowed size is " + maxFileSize.toString(), 400);
-                return ResponseEntity
-                    .status(HttpStatus.BAD_REQUEST)
-                    .body(errorResponse);
-            }
-            
-            String contentType = image.getContentType();
-            if (contentType == null || !contentType.startsWith("image/")) {
-                Log.error("Invalid file type: " + contentType);
-                ErrorResponse errorResponse = new ErrorResponse("Bad Request", "File must be an image", 400);
-                return ResponseEntity
-                    .status(HttpStatus.BAD_REQUEST)
-                    .body(errorResponse);
-            }
-            
-            Log.info("Processing image: " + image.getOriginalFilename() + " (" + image.getSize() + " bytes)");
-            
-            AIModelResponse response = aiModelService.processImage(image);
-            
+            AIModelResponse response = modelAnalysisFlowService.analyzeAndStore(image, authenticatedUser);
+
             Log.info("Image analysis completed successfully in " + response.getProcessingTimeMs() + "ms");
             return ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(response);
-                
+        } catch (IllegalArgumentException e) {
+            Log.error("Invalid request for image analysis: " + e.getMessage());
+            ErrorResponse errorResponse = new ErrorResponse("Bad Request", e.getMessage(), 400);
+            return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(errorResponse);
+        } catch (SecurityException e) {
+            Log.error("Unauthorized image analysis request: " + e.getMessage());
+            ErrorResponse errorResponse = new ErrorResponse("Unauthorized", e.getMessage(), 401);
+            return ResponseEntity
+                .status(HttpStatus.UNAUTHORIZED)
+                .body(errorResponse);
+
         } catch (AIServiceException e) {
             Log.error("AI service error: " + e.getMessage());
             ErrorResponse errorResponse = new ErrorResponse("AI Service Error", e.getMessage(), e.getStatusCode());

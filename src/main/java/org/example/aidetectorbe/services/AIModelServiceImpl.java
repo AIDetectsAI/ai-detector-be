@@ -32,7 +32,7 @@ import java.util.UUID;
 @Service
 public class AIModelServiceImpl implements AIModelService {
     
-    @Value("${ai.service.url}")
+    @Value("${ai.service.url:http://localhost:8000}")
     private String aiServiceUrl;
     
     @Value("${ai.service.endpoint:/verify/image}")
