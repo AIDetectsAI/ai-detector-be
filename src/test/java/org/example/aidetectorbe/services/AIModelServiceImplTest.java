@@ -94,8 +94,8 @@ public class AIModelServiceImplTest {
         String aiResponse = "{\"certainty\": 0.95}";
         // when
         mockServer.expect(MockRestRequestMatchers.requestTo("http://localhost:9999/verify/image"))
-                .andExpect(MockRestRequestMatchers.method(HttpMethod.POST))
-                .andRespond(MockRestResponseCreators.withSuccess(aiResponse, MediaType.APPLICATION_JSON));
+            .andExpect(MockRestRequestMatchers.method(HttpMethod.POST))
+            .andRespond(MockRestResponseCreators.withSuccess(aiResponse, MediaType.APPLICATION_JSON));
 
         AIModelResponse resp = service.processImage(image);
 
@@ -113,8 +113,8 @@ public class AIModelServiceImplTest {
         MockMultipartFile image = new MockMultipartFile("image", "test.jpg", "image/jpeg", "hello".getBytes());
         // when
         mockServer.expect(MockRestRequestMatchers.requestTo("http://localhost:9999/verify/image"))
-                .andExpect(MockRestRequestMatchers.method(HttpMethod.POST))
-                .andRespond(MockRestResponseCreators.withStatus(HttpStatus.UNPROCESSABLE_ENTITY).body("{\"detail\": [{\"loc\": [\"body\", \"file\"], \"msg\": \"Field required\"}]}").contentType(MediaType.APPLICATION_JSON));
+            .andExpect(MockRestRequestMatchers.method(HttpMethod.POST))
+            .andRespond(MockRestResponseCreators.withStatus(HttpStatus.UNPROCESSABLE_ENTITY).body("{\"detail\": [{\"loc\": [\"body\", \"file\"], \"msg\": \"Field required\"}]}").contentType(MediaType.APPLICATION_JSON));
         assertThatThrownBy(() -> service.processImage(image)).isInstanceOf(AIServiceException.class);
         // then
         mockServer.verify();
@@ -126,8 +126,8 @@ public class AIModelServiceImplTest {
         MockMultipartFile image = new MockMultipartFile("image", "test.jpg", "image/jpeg", "hello".getBytes());
         // when
         mockServer.expect(MockRestRequestMatchers.requestTo("http://localhost:9999/verify/image"))
-                .andExpect(MockRestRequestMatchers.method(HttpMethod.POST))
-                .andRespond(MockRestResponseCreators.withServerError().body("Internal Server Error").contentType(MediaType.TEXT_PLAIN));
+            .andExpect(MockRestRequestMatchers.method(HttpMethod.POST))
+            .andRespond(MockRestResponseCreators.withServerError().body("Internal Server Error").contentType(MediaType.TEXT_PLAIN));
         assertThatThrownBy(() -> service.processImage(image)).isInstanceOf(AIServiceException.class);
         // then
         mockServer.verify();
@@ -139,8 +139,8 @@ public class AIModelServiceImplTest {
         MockMultipartFile image = new MockMultipartFile("image", "test.jpg", "image/jpeg", "hello".getBytes());
         // when
         mockServer.expect(MockRestRequestMatchers.requestTo("http://localhost:9999/verify/image"))
-                .andExpect(MockRestRequestMatchers.method(HttpMethod.POST))
-                .andRespond(request -> { throw new java.net.ConnectException("Connection refused"); });
+            .andExpect(MockRestRequestMatchers.method(HttpMethod.POST))
+            .andRespond(request -> { throw new java.net.ConnectException("Connection refused"); });
         assertThatThrownBy(() -> service.processImage(image)).isInstanceOf(AIServiceException.class);
         // then
         mockServer.verify();
@@ -150,8 +150,8 @@ public class AIModelServiceImplTest {
     public void testIsServiceHealthy_WhenAiServiceIsUp_ShouldReturnTrue() throws Exception {
         // when
         mockServer.expect(MockRestRequestMatchers.requestTo("http://localhost:9999/health"))
-                .andExpect(MockRestRequestMatchers.method(HttpMethod.GET))
-                .andRespond(MockRestResponseCreators.withSuccess("{\"status\":\"ok\"}", MediaType.APPLICATION_JSON));
+            .andExpect(MockRestRequestMatchers.method(HttpMethod.GET))
+            .andRespond(MockRestResponseCreators.withSuccess("{\"status\":\"ok\"}", MediaType.APPLICATION_JSON));
         // then
         assertThat(service.isServiceHealthy()).isTrue();
         mockServer.verify();
@@ -161,8 +161,8 @@ public class AIModelServiceImplTest {
     public void testIsServiceHealthy_WhenAiServiceIsDown_ShouldReturnFalse() throws Exception {
         // when
         mockServer.expect(MockRestRequestMatchers.requestTo("http://localhost:9999/health"))
-                .andExpect(MockRestRequestMatchers.method(HttpMethod.GET))
-                .andRespond(MockRestResponseCreators.withServerError().body("Service Unavailable").contentType(MediaType.TEXT_PLAIN));
+            .andExpect(MockRestRequestMatchers.method(HttpMethod.GET))
+            .andRespond(MockRestResponseCreators.withServerError().body("Service Unavailable").contentType(MediaType.TEXT_PLAIN));
         // then
         assertThat(service.isServiceHealthy()).isFalse();
         mockServer.verify();
@@ -182,138 +182,156 @@ public class AIModelServiceImplTest {
 
         @Test
         public void testProcessImage_WhenPersistenceFails_ShouldReturnSuccessfulAiResponseWithoutImageId() throws Exception {
-        // given
-        MockMultipartFile image = new MockMultipartFile("image", "test.jpg", "image/jpeg", "hello".getBytes());
-        String aiResponse = "{\"certainty\": 0.95}";
-        User user = new User();
-        user.setId(java.util.UUID.randomUUID());
-        user.setLogin("john");
-        user.setProvider(Constants.AI_DETECTOR_API_PROVIDER);
+            // given
+            MockMultipartFile image = new MockMultipartFile("image", "test.jpg", "image/jpeg", "hello".getBytes());
+            String aiResponse = "{\"certainty\": 0.95}";
+            User user = new User();
+            user.setId(java.util.UUID.randomUUID());
+            user.setLogin("john");
+            user.setProvider(Constants.AI_DETECTOR_API_PROVIDER);
 
-               SecurityContextHolder.getContext()
-                   .setAuthentication(new UsernamePasswordAuthenticationToken("john", null, Collections.emptyList()));
+                   SecurityContextHolder.getContext()
+                       .setAuthentication(new UsernamePasswordAuthenticationToken("john", null, Collections.emptyList()));
 
-        Mockito.when(userRepository.findByLoginAndProvider("john", Constants.AI_DETECTOR_API_PROVIDER))
-            .thenReturn(java.util.Optional.of(user));
-        Mockito.when(queryRecordRepository.save(any(QueryRecord.class)))
-            .thenThrow(new RuntimeException("db temporary outage"));
+            Mockito.when(userRepository.findByLoginAndProvider("john", Constants.AI_DETECTOR_API_PROVIDER))
+                .thenReturn(java.util.Optional.of(user));
+            Mockito.when(queryRecordRepository.save(any(QueryRecord.class)))
+                .thenThrow(new RuntimeException("db temporary outage"));
 
-        mockServer.expect(MockRestRequestMatchers.requestTo("http://localhost:9999/verify/image"))
-            .andExpect(MockRestRequestMatchers.method(HttpMethod.POST))
-            .andRespond(MockRestResponseCreators.withSuccess(aiResponse, MediaType.APPLICATION_JSON));
+            mockServer.expect(MockRestRequestMatchers.requestTo("http://localhost:9999/verify/image"))
+                .andExpect(MockRestRequestMatchers.method(HttpMethod.POST))
+                .andRespond(MockRestResponseCreators.withSuccess(aiResponse, MediaType.APPLICATION_JSON));
 
-        // when
-        AIModelResponse resp = service.processImage(image);
+            // when
+            AIModelResponse resp = service.processImage(image);
 
-        // then
-        mockServer.verify();
-        assertThat(resp).isNotNull();
-        assertThat(resp.getCertainty()).isCloseTo(0.95d, withinPercentage(0.1d));
-        assertThat(resp.getModelUsed()).isEqualTo("TestModel");
-        assertThat(resp.getImageId()).isNull();
-        Mockito.verify(queryRecordRepository).save(any(QueryRecord.class));
+            // then
+            mockServer.verify();
+            assertThat(resp).isNotNull();
+            assertThat(resp.getCertainty()).isCloseTo(0.95d, withinPercentage(0.1d));
+            assertThat(resp.getModelUsed()).isEqualTo("TestModel");
+            assertThat(resp.getImageId()).isNull();
+            Mockito.verify(queryRecordRepository).save(any(QueryRecord.class));
         }
 
         @Test
         public void testGetPastQueryByImageId_WhenSuccess_ShouldReturnMappedResponse() throws Exception {
-        // given
-        java.util.UUID userId = java.util.UUID.randomUUID();
-        java.util.UUID photoId = java.util.UUID.randomUUID();
-        User user = new User();
-        user.setId(userId);
-        user.setLogin("john");
-        user.setProvider(Constants.AI_DETECTOR_API_PROVIDER);
+            // Arrange
+            java.util.UUID userId = java.util.UUID.randomUUID();
+            java.util.UUID photoId = java.util.UUID.randomUUID();
+            User user = new User();
+            user.setId(userId);
+            user.setLogin("john");
+            user.setProvider(Constants.AI_DETECTOR_API_PROVIDER);
 
-        QueryRecord record = new QueryRecord();
-        record.setPhotoId(photoId);
-        record.setUserId(userId);
-        record.setModel("AIDetector");
-        record.setChance(new java.math.BigDecimal("0.87"));
+            QueryRecord record = new QueryRecord();
+            record.setPhotoId(photoId);
+            record.setUserId(userId);
+            record.setModel("AIDetector");
+            record.setChance(new java.math.BigDecimal("0.87"));
 
-        Mockito.when(userRepository.findByLoginAndProvider("john", Constants.AI_DETECTOR_API_PROVIDER))
-            .thenReturn(java.util.Optional.of(user));
-        Mockito.when(queryRecordRepository.findByPhotoIdAndUserId(photoId, userId))
-            .thenReturn(java.util.Optional.of(record));
+            Mockito.when(userRepository.findByLoginAndProvider("john", Constants.AI_DETECTOR_API_PROVIDER))
+                    .thenReturn(java.util.Optional.of(user));
+            Mockito.when(queryRecordRepository.findByPhotoIdAndUserId(photoId, userId))
+                    .thenReturn(java.util.Optional.of(record));
 
-        // when
-        AIModelResponse resp = service.getPastQueryByImageId(photoId.toString(), "john");
+            // Act
+            AIModelResponse resp = service.getPastQueryByImageId(photoId.toString(), "john");
 
-        // then
-        assertThat(resp).isNotNull();
-        assertThat(resp.getCertainty()).isEqualTo(0.87d);
-        assertThat(resp.getModelUsed()).isEqualTo("AIDetector");
-        assertThat(resp.getImageId()).isEqualTo(photoId.toString());
+            // Assert
+            assertThat(resp).isNotNull();
+            assertThat(resp.getCertainty()).isEqualTo(0.87d);
+            assertThat(resp.getModelUsed()).isEqualTo("AIDetector");
+            assertThat(resp.getImageId()).isEqualTo(photoId.toString());
         }
 
         @Test
         public void testGetPastQueryByImageId_WhenUsernameMissing_ShouldThrow401() {
-        // when/then
-        assertThatThrownBy(() -> service.getPastQueryByImageId(java.util.UUID.randomUUID().toString(), null))
-            .isInstanceOf(AIServiceException.class)
-            .hasFieldOrPropertyWithValue("statusCode", 401);
+            // Arrange
+            String someId = java.util.UUID.randomUUID().toString();
+
+            // Act
+            org.assertj.core.api.ThrowableAssert.ThrowingCallable action = () -> service.getPastQueryByImageId(someId, null);
+
+            // Assert
+            assertThatThrownBy(action)
+                .isInstanceOf(AIServiceException.class)
+                .hasFieldOrPropertyWithValue("statusCode", 401);
         }
 
         @Test
         public void testGetPastQueryByImageId_WhenImageIdInvalid_ShouldThrow400() {
-        // given
-        User user = new User();
-        user.setId(java.util.UUID.randomUUID());
-        Mockito.when(userRepository.findByLoginAndProvider("john", Constants.AI_DETECTOR_API_PROVIDER))
-            .thenReturn(java.util.Optional.of(user));
+            // Arrange
+            User user = new User();
+            user.setId(java.util.UUID.randomUUID());
+            Mockito.when(userRepository.findByLoginAndProvider("john", Constants.AI_DETECTOR_API_PROVIDER))
+                .thenReturn(java.util.Optional.of(user));
 
-        // when/then
-        assertThatThrownBy(() -> service.getPastQueryByImageId("not-a-uuid", "john"))
-            .isInstanceOf(AIServiceException.class)
-            .hasFieldOrPropertyWithValue("statusCode", 400);
+            // Act
+            org.assertj.core.api.ThrowableAssert.ThrowingCallable action = () -> service.getPastQueryByImageId("not-a-uuid", "john");
+
+            // Assert
+            assertThatThrownBy(action)
+                .isInstanceOf(AIServiceException.class)
+                .hasFieldOrPropertyWithValue("statusCode", 400);
         }
 
         @Test
         public void testGetPastQueryByImageId_WhenUserNotFound_ShouldThrow403() {
-        // given
-        Mockito.when(userRepository.findByLoginAndProvider("john", Constants.AI_DETECTOR_API_PROVIDER))
-            .thenReturn(java.util.Optional.empty());
+            // Arrange
+            Mockito.when(userRepository.findByLoginAndProvider("john", Constants.AI_DETECTOR_API_PROVIDER))
+                .thenReturn(java.util.Optional.empty());
 
-        // when/then
-        assertThatThrownBy(() -> service.getPastQueryByImageId(java.util.UUID.randomUUID().toString(), "john"))
-            .isInstanceOf(AIServiceException.class)
-            .hasFieldOrPropertyWithValue("statusCode", 403);
+            // Act
+            org.assertj.core.api.ThrowableAssert.ThrowingCallable action = () -> service.getPastQueryByImageId(java.util.UUID.randomUUID().toString(), "john");
+
+            // Assert
+            assertThatThrownBy(action)
+                .isInstanceOf(AIServiceException.class)
+                .hasFieldOrPropertyWithValue("statusCode", 403);
         }
 
         @Test
         public void testGetPastQueryByImageId_WhenRecordNotFound_ShouldThrow404() {
-        // given
-        java.util.UUID userId = java.util.UUID.randomUUID();
-        java.util.UUID photoId = java.util.UUID.randomUUID();
-        User user = new User();
-        user.setId(userId);
+            // Arrange
+            java.util.UUID userId = java.util.UUID.randomUUID();
+            java.util.UUID photoId = java.util.UUID.randomUUID();
+            User user = new User();
+            user.setId(userId);
 
-        Mockito.when(userRepository.findByLoginAndProvider("john", Constants.AI_DETECTOR_API_PROVIDER))
-            .thenReturn(java.util.Optional.of(user));
-        Mockito.when(queryRecordRepository.findByPhotoIdAndUserId(photoId, userId))
-            .thenReturn(java.util.Optional.empty());
+            Mockito.when(userRepository.findByLoginAndProvider("john", Constants.AI_DETECTOR_API_PROVIDER))
+                .thenReturn(java.util.Optional.of(user));
+            Mockito.when(queryRecordRepository.findByPhotoIdAndUserId(photoId, userId))
+                .thenReturn(java.util.Optional.empty());
 
-        // when/then
-        assertThatThrownBy(() -> service.getPastQueryByImageId(photoId.toString(), "john"))
-            .isInstanceOf(AIServiceException.class)
-            .hasFieldOrPropertyWithValue("statusCode", 404);
+            // Act
+            org.assertj.core.api.ThrowableAssert.ThrowingCallable action = () -> service.getPastQueryByImageId(photoId.toString(), "john");
+
+            // Assert
+            assertThatThrownBy(action)
+                .isInstanceOf(AIServiceException.class)
+                .hasFieldOrPropertyWithValue("statusCode", 404);
         }
 
         @Test
         public void testGetPastQueryByImageId_WhenRepositoryThrowsUnexpectedError_ShouldThrow500() {
-        // given
-        java.util.UUID userId = java.util.UUID.randomUUID();
-        java.util.UUID photoId = java.util.UUID.randomUUID();
-        User user = new User();
-        user.setId(userId);
+            // Arrange
+            java.util.UUID userId = java.util.UUID.randomUUID();
+            java.util.UUID photoId = java.util.UUID.randomUUID();
+            User user = new User();
+            user.setId(userId);
 
-        Mockito.when(userRepository.findByLoginAndProvider("john", Constants.AI_DETECTOR_API_PROVIDER))
-            .thenReturn(java.util.Optional.of(user));
-        Mockito.when(queryRecordRepository.findByPhotoIdAndUserId(eq(photoId), eq(userId)))
-            .thenThrow(new RuntimeException("db read failure"));
+            Mockito.when(userRepository.findByLoginAndProvider("john", Constants.AI_DETECTOR_API_PROVIDER))
+                    .thenReturn(java.util.Optional.of(user));
+            Mockito.when(queryRecordRepository.findByPhotoIdAndUserId(eq(photoId), eq(userId)))
+                    .thenThrow(new RuntimeException("db read failure"));
 
-        // when/then
-        assertThatThrownBy(() -> service.getPastQueryByImageId(photoId.toString(), "john"))
-            .isInstanceOf(AIServiceException.class)
-            .hasFieldOrPropertyWithValue("statusCode", 500);
+            // Act
+            org.assertj.core.api.ThrowableAssert.ThrowingCallable action = () -> service.getPastQueryByImageId(photoId.toString(), "john");
+
+            // Assert
+            assertThatThrownBy(action)
+                    .isInstanceOf(AIServiceException.class)
+                    .hasFieldOrPropertyWithValue("statusCode", 500);
         }
 }

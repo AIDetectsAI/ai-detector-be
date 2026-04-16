@@ -14,6 +14,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.ResultActions;
 
 import java.util.Base64;
 
@@ -60,18 +61,18 @@ public class AIModelControllerTest {
         Mockito.when(aiModelService.processImage(any())).thenReturn(resp);
         // then
         mockMvc.perform(multipart("/api/useModel").file(image)
-                .contentType(MediaType.MULTIPART_FORM_DATA))
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(content().string(containsString("certainty")));
+            .contentType(MediaType.MULTIPART_FORM_DATA))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+            .andExpect(content().string(containsString("certainty")));
     }
 
     @Test
     public void testUseModel_GivenNoFile_ShouldReturn400() throws Exception {
         // when n then
         mockMvc.perform(multipart("/api/useModel")
-                .contentType(MediaType.MULTIPART_FORM_DATA))
-                .andExpect(status().isBadRequest());
+            .contentType(MediaType.MULTIPART_FORM_DATA))
+            .andExpect(status().isBadRequest());
     }
 
     @Test
@@ -82,40 +83,52 @@ public class AIModelControllerTest {
         Mockito.when(aiModelService.processImage(any())).thenThrow(new AIServiceException("AI failed", 502));
         // then
         mockMvc.perform(multipart("/api/useModel").file(image)
-                .contentType(MediaType.MULTIPART_FORM_DATA))
-                .andExpect(status().isBadGateway());
+            .contentType(MediaType.MULTIPART_FORM_DATA))
+            .andExpect(status().isBadGateway());
     }
 
         @Test
         public void testPastQuery_WhenMissingLoginAttribute_ShouldReturn401() throws Exception {
-        mockMvc.perform(get("/api/pastQuery").param("imageId", "b39dcf78-78de-4b11-b4bc-15b760f266ca"))
-            .andExpect(status().isUnauthorized());
+        // Arrange: no login attr
 
+        // Act
+        ResultActions actions = mockMvc.perform(get("/api/pastQuery").param("imageId", "b39dcf78-78de-4b11-b4bc-15b760f266ca"));
+
+        // Assert
+        actions.andExpect(status().isUnauthorized());
         verify(aiModelService, never()).getPastQueryByImageId(anyString(), anyString());
         }
 
         @Test
         public void testPastQuery_WhenSuccessful_ShouldReturn200AndJson() throws Exception {
+        // Arrange
         AIModelResponse resp = new AIModelResponse(0.87, "AIDetector", null, "b39dcf78-78de-4b11-b4bc-15b760f266ca");
         Mockito.when(aiModelService.getPastQueryByImageId(eq("b39dcf78-78de-4b11-b4bc-15b760f266ca"), eq("john")))
             .thenReturn(resp);
 
-        mockMvc.perform(get("/api/pastQuery")
-                .param("imageId", "b39dcf78-78de-4b11-b4bc-15b760f266ca")
-                .requestAttr("login", "john"))
-            .andExpect(status().isOk())
+        // Act
+        ResultActions actions = mockMvc.perform(get("/api/pastQuery")
+            .param("imageId", "b39dcf78-78de-4b11-b4bc-15b760f266ca")
+            .requestAttr("login", "john"));
+
+        // Assert
+        actions.andExpect(status().isOk())
             .andExpect(content().contentType(MediaType.APPLICATION_JSON))
             .andExpect(content().string(containsString("imageId")));
         }
 
         @Test
         public void testPastQuery_WhenServiceThrowsAIServiceException_ShouldPropagateStatus() throws Exception {
+        // Arrange
         Mockito.when(aiModelService.getPastQueryByImageId(anyString(), eq("john")))
             .thenThrow(new AIServiceException("Query not found", 404));
 
-        mockMvc.perform(get("/api/pastQuery")
-                .param("imageId", "b39dcf78-78de-4b11-b4bc-15b760f266ca")
-                .requestAttr("login", "john"))
-            .andExpect(status().isNotFound());
+        // Act
+        ResultActions actions = mockMvc.perform(get("/api/pastQuery")
+            .param("imageId", "b39dcf78-78de-4b11-b4bc-15b760f266ca")
+            .requestAttr("login", "john"));
+
+        // Assert
+        actions.andExpect(status().isNotFound());
         }
 }
