@@ -124,8 +124,13 @@ public class AIModelServiceImpl implements AIModelService {
                     return parsed;
                 }
 
-                UUID photoId = saveQueryRecord(parsed, username);
-                return new AIModelResponse(parsed.getCertainty(), parsed.getModelUsed(), parsed.getProcessingTimeMs(), photoId.toString());
+                try {
+                    UUID photoId = saveQueryRecord(parsed, username);
+                    return new AIModelResponse(parsed.getCertainty(), parsed.getModelUsed(), parsed.getProcessingTimeMs(), photoId.toString());
+                } catch (RuntimeException e) {
+                    Log.warn("Failed to persist query record after successful AI response: " + e.getMessage());
+                    return parsed;
+                }
             } else {
                 throw new AIServiceException("AI service returned error status: " + response.getStatusCode(), 
                     response.getStatusCode().value());
