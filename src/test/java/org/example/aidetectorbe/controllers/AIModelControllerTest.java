@@ -15,13 +15,20 @@ import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.util.Base64;
+
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.hamcrest.Matchers.containsString;
 
-@WebMvcTest(controllers = AIModelController.class)
+@WebMvcTest(controllers = AIModelController.class, properties = "spring.servlet.multipart.max-file-size=10MB")
 @AutoConfigureMockMvc(addFilters = false)
 public class AIModelControllerTest {
 
@@ -39,10 +46,15 @@ public class AIModelControllerTest {
 
     }
 
+    private MockMultipartFile validImageFile() {
+        byte[] png = Base64.getDecoder().decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO6z8e8AAAAASUVORK5CYII=");
+        return new MockMultipartFile("image", "test.png", "image/png", png);
+    }
+
     @Test
     public void testUseModel_GivenHappyPath_ShouldReturn200AndJson() throws Exception {
         // given
-        MockMultipartFile image = new MockMultipartFile("image", "test.jpg", "image/jpeg", "hello".getBytes());
+        MockMultipartFile image = validImageFile();
         //when
         AIModelResponse resp = new AIModelResponse( 0.95, "TestModel", 123L);
         Mockito.when(aiModelService.processImage(any())).thenReturn(resp);
@@ -65,7 +77,7 @@ public class AIModelControllerTest {
     @Test
     public void testUseModel_WhenAiServiceThrowsException_ShouldReturnAppropriateStatus() throws Exception {
         // given
-        MockMultipartFile image = new MockMultipartFile("image", "test.jpg", "image/jpeg", "hello".getBytes());
+        MockMultipartFile image = validImageFile();
         // when
         Mockito.when(aiModelService.processImage(any())).thenThrow(new AIServiceException("AI failed", 502));
         // then
@@ -73,4 +85,37 @@ public class AIModelControllerTest {
                 .contentType(MediaType.MULTIPART_FORM_DATA))
                 .andExpect(status().isBadGateway());
     }
+
+        @Test
+        public void testPastQuery_WhenMissingLoginAttribute_ShouldReturn401() throws Exception {
+        mockMvc.perform(get("/api/pastQuery").param("imageId", "b39dcf78-78de-4b11-b4bc-15b760f266ca"))
+            .andExpect(status().isUnauthorized());
+
+        verify(aiModelService, never()).getPastQueryByImageId(anyString(), anyString());
+        }
+
+        @Test
+        public void testPastQuery_WhenSuccessful_ShouldReturn200AndJson() throws Exception {
+        AIModelResponse resp = new AIModelResponse(0.87, "AIDetector", null, "b39dcf78-78de-4b11-b4bc-15b760f266ca");
+        Mockito.when(aiModelService.getPastQueryByImageId(eq("b39dcf78-78de-4b11-b4bc-15b760f266ca"), eq("john")))
+            .thenReturn(resp);
+
+        mockMvc.perform(get("/api/pastQuery")
+                .param("imageId", "b39dcf78-78de-4b11-b4bc-15b760f266ca")
+                .requestAttr("login", "john"))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+            .andExpect(content().string(containsString("imageId")));
+        }
+
+        @Test
+        public void testPastQuery_WhenServiceThrowsAIServiceException_ShouldPropagateStatus() throws Exception {
+        Mockito.when(aiModelService.getPastQueryByImageId(anyString(), eq("john")))
+            .thenThrow(new AIServiceException("Query not found", 404));
+
+        mockMvc.perform(get("/api/pastQuery")
+                .param("imageId", "b39dcf78-78de-4b11-b4bc-15b760f266ca")
+                .requestAttr("login", "john"))
+            .andExpect(status().isNotFound());
+        }
 }

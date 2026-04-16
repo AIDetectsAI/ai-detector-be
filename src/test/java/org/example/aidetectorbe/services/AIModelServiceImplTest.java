@@ -1,12 +1,23 @@
 package org.example.aidetectorbe.services;
 
 import org.example.aidetectorbe.dto.AIModelResponse;
+import org.example.aidetectorbe.entities.QueryRecord;
+import org.example.aidetectorbe.entities.User;
+import java.util.Collections;
 import org.example.aidetectorbe.exceptions.AIServiceException;
+import org.example.aidetectorbe.repository.QueryRecordRepository;
+import org.example.aidetectorbe.repository.UserRepository;
+import org.example.aidetectorbe.utils.Constants;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.web.client.RestTemplate;
 
@@ -23,6 +34,8 @@ import org.springframework.mock.web.MockMultipartFile;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.withinPercentage;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 
 public class AIModelServiceImplTest {
 
@@ -30,6 +43,8 @@ public class AIModelServiceImplTest {
     private MockRestServiceServer mockServer;
     private ObjectMapper objectMapper;
     private AIModelServiceImpl service;
+    private QueryRecordRepository queryRecordRepository;
+    private UserRepository userRepository;
 
     @BeforeEach
     public void setUp() {
@@ -38,6 +53,11 @@ public class AIModelServiceImplTest {
         mockServer = MockRestServiceServer.createServer(restTemplate);
         objectMapper = new ObjectMapper();
         service = new AIModelServiceImpl(restTemplate, objectMapper);
+        queryRecordRepository = Mockito.mock(QueryRecordRepository.class);
+        userRepository = Mockito.mock(UserRepository.class);
+
+        ReflectionTestUtils.setField(service, "queryRecordRepository", queryRecordRepository);
+        ReflectionTestUtils.setField(service, "userRepository", userRepository);
 
         // override config values via reflection since they're private and injected via @Value in production
         try {
@@ -60,6 +80,11 @@ public class AIModelServiceImplTest {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @AfterEach
+    public void tearDown() {
+        SecurityContextHolder.clearContext();
     }
 
     @Test
@@ -154,4 +179,141 @@ public class AIModelServiceImplTest {
             method.invoke(service, invalidJson, 100L);
         }).hasCauseInstanceOf(AIServiceException.class);
     }
+
+        @Test
+        public void testProcessImage_WhenPersistenceFails_ShouldReturnSuccessfulAiResponseWithoutImageId() throws Exception {
+        // given
+        MockMultipartFile image = new MockMultipartFile("image", "test.jpg", "image/jpeg", "hello".getBytes());
+        String aiResponse = "{\"certainty\": 0.95}";
+        User user = new User();
+        user.setId(java.util.UUID.randomUUID());
+        user.setLogin("john");
+        user.setProvider(Constants.AI_DETECTOR_API_PROVIDER);
+
+               SecurityContextHolder.getContext()
+                   .setAuthentication(new UsernamePasswordAuthenticationToken("john", null, Collections.emptyList()));
+
+        Mockito.when(userRepository.findByLoginAndProvider("john", Constants.AI_DETECTOR_API_PROVIDER))
+            .thenReturn(java.util.Optional.of(user));
+        Mockito.when(queryRecordRepository.save(any(QueryRecord.class)))
+            .thenThrow(new RuntimeException("db temporary outage"));
+
+        mockServer.expect(MockRestRequestMatchers.requestTo("http://localhost:9999/verify/image"))
+            .andExpect(MockRestRequestMatchers.method(HttpMethod.POST))
+            .andRespond(MockRestResponseCreators.withSuccess(aiResponse, MediaType.APPLICATION_JSON));
+
+        // when
+        AIModelResponse resp = service.processImage(image);
+
+        // then
+        mockServer.verify();
+        assertThat(resp).isNotNull();
+        assertThat(resp.getCertainty()).isCloseTo(0.95d, withinPercentage(0.1d));
+        assertThat(resp.getModelUsed()).isEqualTo("TestModel");
+        assertThat(resp.getImageId()).isNull();
+        Mockito.verify(queryRecordRepository).save(any(QueryRecord.class));
+        }
+
+        @Test
+        public void testGetPastQueryByImageId_WhenSuccess_ShouldReturnMappedResponse() throws Exception {
+        // given
+        java.util.UUID userId = java.util.UUID.randomUUID();
+        java.util.UUID photoId = java.util.UUID.randomUUID();
+        User user = new User();
+        user.setId(userId);
+        user.setLogin("john");
+        user.setProvider(Constants.AI_DETECTOR_API_PROVIDER);
+
+        QueryRecord record = new QueryRecord();
+        record.setPhotoId(photoId);
+        record.setUserId(userId);
+        record.setModel("AIDetector");
+        record.setChance(new java.math.BigDecimal("0.87"));
+
+        Mockito.when(userRepository.findByLoginAndProvider("john", Constants.AI_DETECTOR_API_PROVIDER))
+            .thenReturn(java.util.Optional.of(user));
+        Mockito.when(queryRecordRepository.findByPhotoIdAndUserId(photoId, userId))
+            .thenReturn(java.util.Optional.of(record));
+
+        // when
+        AIModelResponse resp = service.getPastQueryByImageId(photoId.toString(), "john");
+
+        // then
+        assertThat(resp).isNotNull();
+        assertThat(resp.getCertainty()).isEqualTo(0.87d);
+        assertThat(resp.getModelUsed()).isEqualTo("AIDetector");
+        assertThat(resp.getImageId()).isEqualTo(photoId.toString());
+        }
+
+        @Test
+        public void testGetPastQueryByImageId_WhenUsernameMissing_ShouldThrow401() {
+        // when/then
+        assertThatThrownBy(() -> service.getPastQueryByImageId(java.util.UUID.randomUUID().toString(), null))
+            .isInstanceOf(AIServiceException.class)
+            .hasFieldOrPropertyWithValue("statusCode", 401);
+        }
+
+        @Test
+        public void testGetPastQueryByImageId_WhenImageIdInvalid_ShouldThrow400() {
+        // given
+        User user = new User();
+        user.setId(java.util.UUID.randomUUID());
+        Mockito.when(userRepository.findByLoginAndProvider("john", Constants.AI_DETECTOR_API_PROVIDER))
+            .thenReturn(java.util.Optional.of(user));
+
+        // when/then
+        assertThatThrownBy(() -> service.getPastQueryByImageId("not-a-uuid", "john"))
+            .isInstanceOf(AIServiceException.class)
+            .hasFieldOrPropertyWithValue("statusCode", 400);
+        }
+
+        @Test
+        public void testGetPastQueryByImageId_WhenUserNotFound_ShouldThrow403() {
+        // given
+        Mockito.when(userRepository.findByLoginAndProvider("john", Constants.AI_DETECTOR_API_PROVIDER))
+            .thenReturn(java.util.Optional.empty());
+
+        // when/then
+        assertThatThrownBy(() -> service.getPastQueryByImageId(java.util.UUID.randomUUID().toString(), "john"))
+            .isInstanceOf(AIServiceException.class)
+            .hasFieldOrPropertyWithValue("statusCode", 403);
+        }
+
+        @Test
+        public void testGetPastQueryByImageId_WhenRecordNotFound_ShouldThrow404() {
+        // given
+        java.util.UUID userId = java.util.UUID.randomUUID();
+        java.util.UUID photoId = java.util.UUID.randomUUID();
+        User user = new User();
+        user.setId(userId);
+
+        Mockito.when(userRepository.findByLoginAndProvider("john", Constants.AI_DETECTOR_API_PROVIDER))
+            .thenReturn(java.util.Optional.of(user));
+        Mockito.when(queryRecordRepository.findByPhotoIdAndUserId(photoId, userId))
+            .thenReturn(java.util.Optional.empty());
+
+        // when/then
+        assertThatThrownBy(() -> service.getPastQueryByImageId(photoId.toString(), "john"))
+            .isInstanceOf(AIServiceException.class)
+            .hasFieldOrPropertyWithValue("statusCode", 404);
+        }
+
+        @Test
+        public void testGetPastQueryByImageId_WhenRepositoryThrowsUnexpectedError_ShouldThrow500() {
+        // given
+        java.util.UUID userId = java.util.UUID.randomUUID();
+        java.util.UUID photoId = java.util.UUID.randomUUID();
+        User user = new User();
+        user.setId(userId);
+
+        Mockito.when(userRepository.findByLoginAndProvider("john", Constants.AI_DETECTOR_API_PROVIDER))
+            .thenReturn(java.util.Optional.of(user));
+        Mockito.when(queryRecordRepository.findByPhotoIdAndUserId(eq(photoId), eq(userId)))
+            .thenThrow(new RuntimeException("db read failure"));
+
+        // when/then
+        assertThatThrownBy(() -> service.getPastQueryByImageId(photoId.toString(), "john"))
+            .isInstanceOf(AIServiceException.class)
+            .hasFieldOrPropertyWithValue("statusCode", 500);
+        }
 }
