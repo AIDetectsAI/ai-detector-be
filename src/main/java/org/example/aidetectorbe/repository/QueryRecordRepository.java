@@ -7,5 +7,5 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface QueryRecordRepository extends JpaRepository<QueryRecord, Long> {
-    Optional<QueryRecord> findByPhotoId(UUID photoId);
+    Optional<QueryRecord> findByPhotoIdAndUserId(UUID photoId, UUID userId);
 }

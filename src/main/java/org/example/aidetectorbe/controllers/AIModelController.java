@@ -16,6 +16,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.unit.DataSize;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -76,7 +77,7 @@ public class AIModelController {
             
             Log.info("Processing image: " + image.getOriginalFilename() + " (" + image.getSize() + " bytes)");
             
-            AIModelResponse response = aiModelService.processImage(image, authenticatedUser);
+            AIModelResponse response = aiModelService.processImage(image);
             
             Log.info("Image analysis completed successfully in " + response.getProcessingTimeMs() + "ms");
             return ResponseEntity.ok()
@@ -98,7 +99,7 @@ public class AIModelController {
         }
     }
 
-    @RequestMapping(value = "/pastQuery")
+    @GetMapping(value = "/pastQuery")
     public ResponseEntity<?> getPastQuery(@RequestParam("imageId") String imageId, HttpServletRequest request) {
         String authenticatedUser = (String) request.getAttribute("login");
         Log.info("Received request to retrieve past query for user: " + authenticatedUser);
