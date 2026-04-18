@@ -6,7 +6,6 @@ import org.example.aidetectorbe.entities.User;
 import org.example.aidetectorbe.exceptions.AIServiceException;
 import org.example.aidetectorbe.repository.ModelResultRepository;
 import org.example.aidetectorbe.repository.UserRepository;
-import org.example.aidetectorbe.utils.Constants;
 import org.example.aidetectorbe.utils.logger.Log;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
