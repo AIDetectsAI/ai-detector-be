@@ -3,6 +3,7 @@ package org.example.aidetectorbe.controllers;
 import org.example.aidetectorbe.dto.AIModelResponse;
 import org.example.aidetectorbe.exceptions.AIServiceException;
 import org.example.aidetectorbe.security.JwtUtil;
+import org.example.aidetectorbe.services.AIModelService;
 import org.example.aidetectorbe.services.ModelAnalysisFlowService;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -16,8 +17,12 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -30,6 +35,9 @@ public class AIModelControllerTest {
 
     @MockBean
     private ModelAnalysisFlowService modelAnalysisFlowService;
+
+    @MockBean
+    private AIModelService aiModelService;
 
     @MockBean
     private JwtUtil jwtUtil;
@@ -55,7 +63,7 @@ public class AIModelControllerTest {
     public void testUseModel_GivenNoFile_ShouldReturn400() throws Exception {
         // when n then
         mockMvc.perform(multipart("/api/useModel")
-                .requestAttr("login", "testUser")
+            .requestAttr("login", "testUser")
                 .contentType(MediaType.MULTIPART_FORM_DATA))
                 .andExpect(status().isBadRequest());
     }
@@ -72,5 +80,44 @@ public class AIModelControllerTest {
                 .requestAttr("login", "testUser")
                 .contentType(MediaType.MULTIPART_FORM_DATA))
                 .andExpect(status().isBadGateway());
+    }
+
+    @Test
+    public void testPastQuery_WhenMissingLoginAttribute_ShouldReturn401() throws Exception {
+        // Act & Assert
+        mockMvc.perform(get("/api/pastQuery").param("imageId", "b39dcf78-78de-4b11-b4bc-15b760f266ca"))
+                .andExpect(status().isUnauthorized());
+
+        verify(aiModelService, never()).getPastQueryByImageId(anyString(), anyString());
+    }
+
+    @Test
+    public void testPastQuery_WhenSuccessful_ShouldReturn200AndJson() throws Exception {
+        // Arrange
+        String imageId = "b39dcf78-78de-4b11-b4bc-15b760f266ca";
+        AIModelResponse resp = new AIModelResponse(0.87, "AIDetector", null, imageId);
+        Mockito.when(aiModelService.getPastQueryByImageId(eq(imageId), eq("john"))).thenReturn(resp);
+
+        // Act & Assert
+        mockMvc.perform(get("/api/pastQuery")
+                .param("imageId", imageId)
+                .requestAttr("login", "john"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(content().string(containsString("imageId")));
+    }
+
+    @Test
+    public void testPastQuery_WhenServiceThrowsAIServiceException_ShouldPropagateStatus() throws Exception {
+        // Arrange
+        String imageId = "b39dcf78-78de-4b11-b4bc-15b760f266ca";
+        Mockito.when(aiModelService.getPastQueryByImageId(anyString(), eq("john")))
+                .thenThrow(new AIServiceException("Query not found", 404));
+
+        // Act & Assert
+        mockMvc.perform(get("/api/pastQuery")
+                .param("imageId", imageId)
+                .requestAttr("login", "john"))
+                .andExpect(status().isNotFound());
     }
 }
