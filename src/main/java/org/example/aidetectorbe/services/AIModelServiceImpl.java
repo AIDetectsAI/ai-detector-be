@@ -1,17 +1,15 @@
 package org.example.aidetectorbe.services;
 
 import org.example.aidetectorbe.dto.AIModelResponse;
-import org.example.aidetectorbe.entities.QueryRecord;
+import org.example.aidetectorbe.entities.ModelResult;
 import org.example.aidetectorbe.entities.User;
 import org.example.aidetectorbe.exceptions.AIServiceException;
-import org.example.aidetectorbe.repository.QueryRecordRepository;
+import org.example.aidetectorbe.repository.ModelResultRepository;
 import org.example.aidetectorbe.repository.UserRepository;
 import org.example.aidetectorbe.utils.Constants;
 import org.example.aidetectorbe.utils.logger.Log;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
@@ -25,8 +23,6 @@ import org.springframework.web.multipart.MultipartFile;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.util.UUID;
 
 @Service
@@ -51,7 +47,7 @@ public class AIModelServiceImpl implements AIModelService {
     private final ObjectMapper objectMapper;
 
     @Autowired
-    private QueryRecordRepository queryRecordRepository;
+    private ModelResultRepository modelResultRepository;
 
     @Autowired
     private UserRepository userRepository;
@@ -117,20 +113,7 @@ public class AIModelServiceImpl implements AIModelService {
             Log.info("AI service response body: " + response.getBody());
             
             if (response.getStatusCode() == HttpStatus.OK) {
-                AIModelResponse parsed = parseSuccessfulResponse(response.getBody(), startTime);
-
-                String username = resolveAuthenticatedUsername();
-                if (username == null) {
-                    return parsed;
-                }
-
-                try {
-                    UUID photoId = saveQueryRecord(parsed, username);
-                    return new AIModelResponse(parsed.getCertainty(), parsed.getModelUsed(), parsed.getProcessingTimeMs(), photoId.toString());
-                } catch (RuntimeException e) {
-                    Log.warn("Failed to persist query record after successful AI response: " + e.getMessage());
-                    return parsed;
-                }
+                return parseSuccessfulResponse(response.getBody(), startTime);
             } else {
                 throw new AIServiceException("AI service returned error status: " + response.getStatusCode(), 
                     response.getStatusCode().value());
@@ -170,8 +153,8 @@ public class AIModelServiceImpl implements AIModelService {
                 throw new AIServiceException("Invalid imageId format", 400);
             }
 
-            QueryRecord record = queryRecordRepository.findByPhotoIdAndUserId(photoId, user.getId())
-                .orElseThrow(() -> new AIServiceException("Query not found", 404));
+            ModelResult record = modelResultRepository.findByPhotoIdAndUserId(photoId, user.getId())
+                    .orElseThrow(() -> new AIServiceException("Query not found", 404));
 
             Double certainty = record.getChance() != null ? record.getChance().doubleValue() : null;
             return new AIModelResponse(certainty, record.getModel(), null, record.getPhotoId().toString());
@@ -180,36 +163,6 @@ public class AIModelServiceImpl implements AIModelService {
         } catch (Exception e) {
             throw new AIServiceException("Failed to retrieve past query", e);
         }
-    }
-
-    private String resolveAuthenticatedUsername() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null || !authentication.isAuthenticated()) {
-            return null;
-        }
-
-        String username = authentication.getName();
-        if (username == null || "anonymousUser".equalsIgnoreCase(username)) {
-            return null;
-        }
-
-        return username;
-    }
-
-    private UUID saveQueryRecord(AIModelResponse parsedResponse, String username) throws AIServiceException {
-        User user = userRepository.findByLoginAndProvider(username, Constants.AI_DETECTOR_API_PROVIDER)
-            .orElseThrow(() -> new AIServiceException("User not found in database", 403));
-
-        UUID photoId = UUID.randomUUID();
-        QueryRecord record = new QueryRecord();
-        record.setPhotoId(photoId);
-        record.setUserId(user.getId());
-        record.setModel(parsedResponse.getModelUsed());
-        BigDecimal chance = BigDecimal.valueOf(parsedResponse.getCertainty() != null ? parsedResponse.getCertainty() : 0.0)
-            .setScale(2, RoundingMode.HALF_UP);
-        record.setChance(chance);
-        queryRecordRepository.save(record);
-        return photoId;
     }
     
     @Override

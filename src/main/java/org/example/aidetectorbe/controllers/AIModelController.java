@@ -3,12 +3,12 @@ package org.example.aidetectorbe.controllers;
 import org.example.aidetectorbe.dto.AIModelResponse;
 import org.example.aidetectorbe.dto.ErrorResponse;
 import org.example.aidetectorbe.exceptions.AIServiceException;
+import org.example.aidetectorbe.services.AIModelService;
 import org.example.aidetectorbe.services.ModelAnalysisFlowService;
 import org.example.aidetectorbe.utils.logger.Log;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.util.unit.DataSize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -22,9 +22,11 @@ import jakarta.servlet.http.HttpServletRequest;
 public class AIModelController {
 
     private final ModelAnalysisFlowService modelAnalysisFlowService;
+    private final AIModelService aiModelService;
 
-    public AIModelController(ModelAnalysisFlowService modelAnalysisFlowService) {
+    public AIModelController(ModelAnalysisFlowService modelAnalysisFlowService, AIModelService aiModelService) {
         this.modelAnalysisFlowService = modelAnalysisFlowService;
+        this.aiModelService = aiModelService;
     }
 
     @PostMapping(value = {"/useModel", "/model/analyze"}, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)

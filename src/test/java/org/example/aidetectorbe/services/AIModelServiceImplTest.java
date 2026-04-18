@@ -1,11 +1,11 @@
 package org.example.aidetectorbe.services;
 
 import org.example.aidetectorbe.dto.AIModelResponse;
-import org.example.aidetectorbe.entities.QueryRecord;
+import org.example.aidetectorbe.entities.ModelResult;
 import org.example.aidetectorbe.entities.User;
 import java.util.Collections;
 import org.example.aidetectorbe.exceptions.AIServiceException;
-import org.example.aidetectorbe.repository.QueryRecordRepository;
+import org.example.aidetectorbe.repository.ModelResultRepository;
 import org.example.aidetectorbe.repository.UserRepository;
 import org.example.aidetectorbe.utils.Constants;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -43,7 +43,7 @@ public class AIModelServiceImplTest {
     private MockRestServiceServer mockServer;
     private ObjectMapper objectMapper;
     private AIModelServiceImpl service;
-    private QueryRecordRepository queryRecordRepository;
+    private ModelResultRepository modelResultRepository;
     private UserRepository userRepository;
 
     @BeforeEach
@@ -53,10 +53,9 @@ public class AIModelServiceImplTest {
         mockServer = MockRestServiceServer.createServer(restTemplate);
         objectMapper = new ObjectMapper();
         service = new AIModelServiceImpl(restTemplate, objectMapper);
-        queryRecordRepository = Mockito.mock(QueryRecordRepository.class);
+        modelResultRepository = Mockito.mock(ModelResultRepository.class);
         userRepository = Mockito.mock(UserRepository.class);
-
-        ReflectionTestUtils.setField(service, "queryRecordRepository", queryRecordRepository);
+        ReflectionTestUtils.setField(service, "modelResultRepository", modelResultRepository);
         ReflectionTestUtils.setField(service, "userRepository", userRepository);
 
         // override config values via reflection since they're private and injected via @Value in production
@@ -195,9 +194,7 @@ public class AIModelServiceImplTest {
 
             Mockito.when(userRepository.findByLoginAndProvider("john", Constants.AI_DETECTOR_API_PROVIDER))
                 .thenReturn(java.util.Optional.of(user));
-            Mockito.when(queryRecordRepository.save(any(QueryRecord.class)))
-                .thenThrow(new RuntimeException("db temporary outage"));
-
+            // service no longer persists directly in processImage; ensure response is returned
             mockServer.expect(MockRestRequestMatchers.requestTo("http://localhost:9999/verify/image"))
                 .andExpect(MockRestRequestMatchers.method(HttpMethod.POST))
                 .andRespond(MockRestResponseCreators.withSuccess(aiResponse, MediaType.APPLICATION_JSON));
@@ -211,7 +208,8 @@ public class AIModelServiceImplTest {
             assertThat(resp.getCertainty()).isCloseTo(0.95d, withinPercentage(0.1d));
             assertThat(resp.getModelUsed()).isEqualTo("TestModel");
             assertThat(resp.getImageId()).isNull();
-            Mockito.verify(queryRecordRepository).save(any(QueryRecord.class));
+            // persistence is handled elsewhere; ensure no direct save was performed here
+            Mockito.verify(modelResultRepository, Mockito.never()).save(any(ModelResult.class));
         }
 
         @Test
@@ -224,7 +222,8 @@ public class AIModelServiceImplTest {
             user.setLogin("john");
             user.setProvider(Constants.AI_DETECTOR_API_PROVIDER);
 
-            QueryRecord record = new QueryRecord();
+
+            ModelResult record = new ModelResult();
             record.setPhotoId(photoId);
             record.setUserId(userId);
             record.setModel("AIDetector");
@@ -232,7 +231,7 @@ public class AIModelServiceImplTest {
 
             Mockito.when(userRepository.findByLoginAndProvider("john", Constants.AI_DETECTOR_API_PROVIDER))
                     .thenReturn(java.util.Optional.of(user));
-            Mockito.when(queryRecordRepository.findByPhotoIdAndUserId(photoId, userId))
+                Mockito.when(modelResultRepository.findByPhotoIdAndUserId(photoId, userId))
                     .thenReturn(java.util.Optional.of(record));
 
             // Act
@@ -301,7 +300,7 @@ public class AIModelServiceImplTest {
 
             Mockito.when(userRepository.findByLoginAndProvider("john", Constants.AI_DETECTOR_API_PROVIDER))
                 .thenReturn(java.util.Optional.of(user));
-            Mockito.when(queryRecordRepository.findByPhotoIdAndUserId(photoId, userId))
+            Mockito.when(modelResultRepository.findByPhotoIdAndUserId(photoId, userId))
                 .thenReturn(java.util.Optional.empty());
 
             // Act
@@ -323,7 +322,7 @@ public class AIModelServiceImplTest {
 
             Mockito.when(userRepository.findByLoginAndProvider("john", Constants.AI_DETECTOR_API_PROVIDER))
                     .thenReturn(java.util.Optional.of(user));
-            Mockito.when(queryRecordRepository.findByPhotoIdAndUserId(eq(photoId), eq(userId)))
+                Mockito.when(modelResultRepository.findByPhotoIdAndUserId(eq(photoId), eq(userId)))
                     .thenThrow(new RuntimeException("db read failure"));
 
             // Act
