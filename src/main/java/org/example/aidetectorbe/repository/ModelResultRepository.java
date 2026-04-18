@@ -6,6 +6,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.Optional;
 import java.util.UUID;
 
-public interface ModelResultRepository extends JpaRepository<ModelResult, Integer> {
+public interface ModelResultRepository extends JpaRepository<ModelResult, UUID> {
 	Optional<ModelResult> findByPhotoIdAndUserId(UUID photoId, UUID userId);
 }

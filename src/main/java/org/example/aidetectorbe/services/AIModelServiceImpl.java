@@ -45,20 +45,15 @@ public class AIModelServiceImpl implements AIModelService {
     
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
+    private final ModelResultRepository modelResultRepository;
+    private final UserRepository userRepository;
 
     @Autowired
-    private ModelResultRepository modelResultRepository;
-
-    @Autowired
-    private UserRepository userRepository;
-
-    public AIModelServiceImpl() {
-        this(new RestTemplate(), new ObjectMapper());
-    }
-
-    public AIModelServiceImpl(RestTemplate restTemplate, ObjectMapper objectMapper) {
+    public AIModelServiceImpl(RestTemplate restTemplate, ObjectMapper objectMapper, ModelResultRepository modelResultRepository, UserRepository userRepository) {
         this.restTemplate = restTemplate;
         this.objectMapper = objectMapper;
+        this.modelResultRepository = modelResultRepository;
+        this.userRepository = userRepository;
     }
     
     @Override
@@ -143,7 +138,7 @@ public class AIModelServiceImpl implements AIModelService {
                 throw new AIServiceException("Unauthorized", 401);
             }
 
-            User user = userRepository.findByLoginAndProvider(username, Constants.AI_DETECTOR_API_PROVIDER)
+            User user = userRepository.findByLogin(username)
                 .orElseThrow(() -> new AIServiceException("Forbidden", 403));
 
             UUID photoId;
