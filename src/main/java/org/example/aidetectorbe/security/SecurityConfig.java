@@ -35,6 +35,9 @@ public class SecurityConfig {
     @Value("${app.default.success-url:/}")
     private String defaultSuccessUrl;
 
+    @Value("${app.cors.allowed-origins:http://localhost:4321}")
+    private String allowedOrigins;
+
     @Bean
     public OAuth2UserService<OAuth2UserRequest, OAuth2User> oauth2UserService() {
         return customOAuth2UserService;
@@ -67,7 +70,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:4321", "http://127.0.0.1:4321"));
+        configuration.setAllowedOrigins(List.of(allowedOrigins.split(",")));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);

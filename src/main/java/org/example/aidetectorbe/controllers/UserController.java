@@ -57,7 +57,8 @@ public class UserController {
                     .status(HttpStatus.BAD_REQUEST)
                     .body("invalid data: " + result.getAllErrors());
         }
-        if (!userService.verifyUserByLoginAndProvider(loginDTO.getLogin(), loginDTO.getPassword(), AI_DETECTOR_API_PROVIDER)){
+        if (!userService.verifyUserByLoginAndProvider(loginDTO.getLogin(), loginDTO.getPassword(),
+                AI_DETECTOR_API_PROVIDER)) {
             Log.info(String.format("Invalid password for attempted login as '%s'", loginDTO.getLogin()));
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User does not exist or invalid password");
         }
@@ -78,7 +79,6 @@ public class UserController {
         }
         return ResponseEntity.ok(Map.of(
                 "login", user.getLogin(),
-                "email", user.getEmail()
-        ));
+                "email", user.getEmail()));
     }
 }

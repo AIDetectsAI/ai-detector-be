@@ -36,7 +36,8 @@ public class HistoryController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
         }
 
-        List<ModelResult> results = modelResultRepository.findByUserIdAndIsDeletedFalseOrderByCreatedAtDesc(user.getId());
+        List<ModelResult> results = modelResultRepository
+                .findByUserIdAndIsDeletedFalseOrderByCreatedAtDesc(user.getId());
 
         List<HistoryEntryDTO> history = results.stream()
                 .map(r -> new HistoryEntryDTO(
@@ -44,8 +45,7 @@ public class HistoryController {
                         r.getPhotoId(),
                         r.getModel(),
                         r.getChance(),
-                        r.getCreatedAt()
-                ))
+                        r.getCreatedAt()))
                 .toList();
 
         Log.info("Returning " + history.size() + " history entries for user " + login);
