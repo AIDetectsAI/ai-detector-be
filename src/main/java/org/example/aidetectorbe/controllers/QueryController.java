@@ -1,6 +1,6 @@
 package org.example.aidetectorbe.controllers;
 
-import org.example.aidetectorbe.logger.Log;
+import org.example.aidetectorbe.utils.logger.Log;
 import org.example.aidetectorbe.services.QueryService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -30,6 +30,23 @@ public class QueryController {
             queryService.deleteQuery(queryId, userLogin);
         } catch (EntityNotFoundException e) {
             Log.error("Didn't find the query to delete: " + e.getMessage());
+            ErrorResponse errorResponse = new ErrorResponse("Delete query rror", e.getMessage(), 404);
+            return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body(errorResponse);
+        }
+        return ResponseEntity
+            .status(HttpStatus.NO_CONTENT)
+            .build();
+    }
+
+    @DeleteMapping(value = "/users/{userLogin}/queries/all")
+    public ResponseEntity<?> deleteAllQuery(@PathVariable Long queryId, @PathVariable String userLogin) {
+        Log.info("Received a request to remove all queries: from user: " + userLogin);
+        try {
+            queryService.deleteAllQueries(userLogin);
+        } catch (EntityNotFoundException e) {
+            Log.error("Didn't find queries to delete: " + e.getMessage());
             ErrorResponse errorResponse = new ErrorResponse("Delete query rror", e.getMessage(), 404);
             return ResponseEntity
                 .status(HttpStatus.NOT_FOUND)

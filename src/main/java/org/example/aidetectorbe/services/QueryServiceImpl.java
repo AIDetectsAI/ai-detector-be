@@ -26,4 +26,9 @@ public class QueryServiceImpl implements QueryService {
         queryRepository.save(query);
     }
 
+    @Override
+    public void deleteAllQueries(String login) {
+        
+    }
+
 }
