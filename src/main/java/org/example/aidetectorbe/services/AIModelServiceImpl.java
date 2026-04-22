@@ -1,8 +1,13 @@
 package org.example.aidetectorbe.services;
 
 import org.example.aidetectorbe.dto.AIModelResponse;
+import org.example.aidetectorbe.entities.ModelResult;
+import org.example.aidetectorbe.entities.User;
 import org.example.aidetectorbe.exceptions.AIServiceException;
+import org.example.aidetectorbe.repository.ModelResultRepository;
+import org.example.aidetectorbe.repository.UserRepository;
 import org.example.aidetectorbe.utils.logger.Log;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.*;
@@ -16,6 +21,8 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
+import java.util.UUID;
 
 @Service
 public class AIModelServiceImpl implements AIModelService {
@@ -37,16 +44,15 @@ public class AIModelServiceImpl implements AIModelService {
     
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
+    private final ModelResultRepository modelResultRepository;
+    private final UserRepository userRepository;
 
-    // Default constructor used by Spring in production
-    public AIModelServiceImpl() {
-        this(new RestTemplate(), new ObjectMapper());
-    }
-
-    // Constructor for tests to inject mockable RestTemplate/ObjectMapper
-    public AIModelServiceImpl(RestTemplate restTemplate, ObjectMapper objectMapper) {
+    @Autowired
+    public AIModelServiceImpl(RestTemplate restTemplate, ObjectMapper objectMapper, ModelResultRepository modelResultRepository, UserRepository userRepository) {
         this.restTemplate = restTemplate;
         this.objectMapper = objectMapper;
+        this.modelResultRepository = modelResultRepository;
+        this.userRepository = userRepository;
     }
     
     @Override
@@ -117,10 +123,39 @@ public class AIModelServiceImpl implements AIModelService {
             Log.error("Network error connecting to AI service: " + e.getMessage());
             throw new AIServiceException("Unable to connect to AI service. Please try again later.", e, 503);
         } catch (AIServiceException e) {
-            throw e; // Re-throw our custom exceptions
+            throw e;
         } catch (Exception e) {
             Log.error("Unexpected error communicating with AI service: " + e.getMessage());
             throw new AIServiceException("Failed to process image with AI service: " + e.getMessage(), e);
+        }
+    }
+    
+    @Override
+    public AIModelResponse getPastQueryByImageId(String imageId, String username) throws AIServiceException {
+        try {
+            if (username == null) {
+                throw new AIServiceException("Unauthorized", 401);
+            }
+
+            User user = userRepository.findByLogin(username)
+                .orElseThrow(() -> new AIServiceException("Forbidden", 403));
+
+            UUID photoId;
+            try {
+                photoId = UUID.fromString(imageId);
+            } catch (IllegalArgumentException e) {
+                throw new AIServiceException("Invalid imageId format", 400);
+            }
+
+            ModelResult record = modelResultRepository.findByPhotoIdAndUserId(photoId, user.getId())
+                    .orElseThrow(() -> new AIServiceException("Query not found", 404));
+
+            Double certainty = record.getChance() != null ? record.getChance().doubleValue() : null;
+            return new AIModelResponse(certainty, record.getModel(), null, record.getPhotoId().toString());
+        } catch (AIServiceException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new AIServiceException("Failed to retrieve past query", e);
         }
     }
     
@@ -151,7 +186,8 @@ public class AIModelServiceImpl implements AIModelService {
             return new AIModelResponse(
                 certainty,
                 modelName,
-                processingTime
+                processingTime,
+                null
             );
             
         } catch (Exception e) {
