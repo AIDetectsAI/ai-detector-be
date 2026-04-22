@@ -5,13 +5,13 @@ import org.example.aidetectorbe.repository.QueryRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-import org.springframework.security.core.userdetails.User;
 
 import jakarta.persistence.EntityNotFoundException;
 
 import java.util.Optional;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -110,10 +110,13 @@ class QueryServiceImplTest {
 
         // Assert
         ArgumentCaptor<Query> queryCaptor = ArgumentCaptor.forClass(Query.class);
-        verify(mockQueryRepository).save(queryCaptor.capture());
-        Query savedQuery = queryCaptor.getValue();
+        verify(mockQueryRepository, times(2)).save(queryCaptor.capture());
+        List<Query> savedQueries = queryCaptor.getAllValues();
+        assertEquals(2, savedQueries.size());
+        for (Query query : savedQueries) {
+            assertTrue(query.getIsDeleted());
+        }
 
-        assertTrue(savedQuery.getIsDeleted());
         verify(mockQueryRepository).findByUser_Login(userLogin);
     }
 

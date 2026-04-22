@@ -54,7 +54,7 @@ public class QueryControllerTest {
         // when
         doThrow(new EntityNotFoundException(exceptionMessage)).when(mockQueryService).deleteQuery(anyLong(), anyString());
 
-        ErrorResponse expectedError = new ErrorResponse("Delete query rror", exceptionMessage, 404);
+        ErrorResponse expectedError = new ErrorResponse("Delete query error", exceptionMessage, 404);
 
         // then
         mockMvc.perform(delete("/api/users/{userLogin}/queries/{queryId}", userLogin, queryId))
@@ -88,7 +88,8 @@ public class QueryControllerTest {
         String userLogin = "testUser";
 
         // when & then
-        mockMvc.perform(delete("/api/users/{userLogin}/queries/all"))
+
+        mockMvc.perform(delete("/api/users/{userLogin}/queries/all", userLogin))
                 .andExpect(status().isNoContent());
 
         verify(mockQueryService).deleteAllQueries(userLogin);
