@@ -1,6 +1,7 @@
 package org.example.aidetectorbe.controllers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.example.aidetectorbe.dto.LoginDTO;
 import org.example.aidetectorbe.dto.UserDTO;
 import org.example.aidetectorbe.services.UserService;
 import org.junit.jupiter.api.BeforeEach;
@@ -93,39 +94,39 @@ public class UserControllerTest {
     @Test
     void testLoginUser_GivenCorrectCredentials_ShouldReturnToken() throws Exception {
         // given
-        UserDTO userDTO = new UserDTO("JohnParadox", "Passw0rd!", "mail@mail.mail");
+        LoginDTO loginDTO = new LoginDTO("JohnParadox", "Passw0rd!");
 
         // mock
-        when(mockUserService.verifyUserByLoginAndProvider(userDTO, AI_DETECTOR_API_PROVIDER)).thenReturn(true);
+        when(mockUserService.verifyUserByLoginAndProvider("JohnParadox", "Passw0rd!", AI_DETECTOR_API_PROVIDER)).thenReturn(true);
         when(mockUserService.getTokenByLogin("JohnParadox")).thenReturn("mocked_token");
 
         // when n then
         mockMvc.perform(post("/auth/login")
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content(objectMapper.writeValueAsString(userDTO)))
+                    .content(objectMapper.writeValueAsString(loginDTO)))
                 .andExpect(status().isOk())
                 .andExpect(content().json("{\"token\":\"mocked_token\"}"));
 
-        verify(mockUserService).verifyUserByLoginAndProvider(userDTO, AI_DETECTOR_API_PROVIDER);
+        verify(mockUserService).verifyUserByLoginAndProvider("JohnParadox", "Passw0rd!", AI_DETECTOR_API_PROVIDER);
         verify(mockUserService).getTokenByLogin("JohnParadox");
     }
 
     @Test
     void testLoginUser_GivenIncorrectCredentials_ShouldReturnUnauthorized() throws Exception {
         // given
-        UserDTO userDTO = new UserDTO("JohnParadox", "Passw0rd!", "mail@mail.mail");
+        LoginDTO loginDTO = new LoginDTO("JohnParadox", "Passw0rd!");
 
         // mock
-        when(mockUserService.verifyUserByLoginAndProvider(userDTO, AI_DETECTOR_API_PROVIDER)).thenReturn(false);
+        when(mockUserService.verifyUserByLoginAndProvider("JohnParadox", "Passw0rd!", AI_DETECTOR_API_PROVIDER)).thenReturn(false);
 
         // when n then
         mockMvc.perform(post("/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(userDTO)))
+                        .content(objectMapper.writeValueAsString(loginDTO)))
                 .andExpect(status().isUnauthorized())
                 .andExpect(content().string("User does not exist or invalid password"));
 
-        verify(mockUserService).verifyUserByLoginAndProvider(userDTO, AI_DETECTOR_API_PROVIDER);
+        verify(mockUserService).verifyUserByLoginAndProvider("JohnParadox", "Passw0rd!", AI_DETECTOR_API_PROVIDER);
         verify(mockUserService, never()).getTokenByLogin(anyString());
     }
 
