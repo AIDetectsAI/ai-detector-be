@@ -54,7 +54,7 @@ public class QueryControllerTest {
         // when
         doThrow(new EntityNotFoundException(exceptionMessage)).when(mockQueryService).deleteQuery(anyLong(), anyString());
 
-        ErrorResponse expectedError = new ErrorResponse("Delete query rror", exceptionMessage, 404);
+        ErrorResponse expectedError = new ErrorResponse("Delete query error", exceptionMessage, 404);
 
         // then
         mockMvc.perform(delete("/api/users/{userLogin}/queries/{queryId}", userLogin, queryId))
@@ -81,4 +81,38 @@ public class QueryControllerTest {
                 .andExpect(status().isNoContent());
         verify(mockQueryService).deleteQuery(queryId2, userLogin);
     }
+
+    @Test
+    void testDeleteAllQueries_GivenExistingUser_ShouldReturnNoContent() throws Exception {
+        // given
+        String userLogin = "testUser";
+
+        // when & then
+
+        mockMvc.perform(delete("/api/users/{userLogin}/queries/all", userLogin))
+                .andExpect(status().isNoContent());
+
+        verify(mockQueryService).deleteAllQueries(userLogin);
+    }
+
+    @Test
+    void testDeleteAllQueries_GivenNonExistingUser_ShouldReturnNotFound() throws Exception {
+        // given
+        String userLogin = "testUser";
+        String exceptionMessage = "Queries were not found";
+
+        // when
+        doThrow(new EntityNotFoundException(exceptionMessage)).when(mockQueryService).deleteAllQueries(anyString());
+
+        ErrorResponse expectedError = new ErrorResponse("Delete query error", exceptionMessage, 404);
+
+        // then
+        mockMvc.perform(delete("/api/users/{userLogin}/queries/all", userLogin))
+                .andExpect(status().isNotFound())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(content().json(objectMapper.writeValueAsString(expectedError)));
+
+        verify(mockQueryService).deleteAllQueries(userLogin);
+    }
+
 }
