@@ -1,6 +1,6 @@
 package org.example.aidetectorbe.controllers;
 
-import org.example.aidetectorbe.logger.Log;
+import org.example.aidetectorbe.utils.logger.Log;
 import org.example.aidetectorbe.services.QueryService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -22,7 +22,7 @@ public class QueryController {
 
     @Autowired
     private QueryService queryService;
-    
+
     @DeleteMapping(value = "/users/{userLogin}/queries/{queryId}")
     public ResponseEntity<?> deleteQuery(@PathVariable Long queryId, @PathVariable String userLogin) {
         Log.info("Received a request to remove a query: " + queryId + " from user: " + userLogin);
@@ -32,11 +32,11 @@ public class QueryController {
             Log.error("Didn't find the query to delete: " + e.getMessage());
             ErrorResponse errorResponse = new ErrorResponse("Delete query rror", e.getMessage(), 404);
             return ResponseEntity
-                .status(HttpStatus.NOT_FOUND)
-                .body(errorResponse);
+                    .status(HttpStatus.NOT_FOUND)
+                    .body(errorResponse);
         }
         return ResponseEntity
-            .status(HttpStatus.NO_CONTENT)
-            .build();
+                .status(HttpStatus.NO_CONTENT)
+                .build();
     }
 }
