@@ -7,6 +7,7 @@ import lombok.AllArgsConstructor;
 import org.example.aidetectorbe.repository.QueryRepository;
 import org.example.aidetectorbe.entities.Query;
 import java.util.Optional;
+import java.util.Set;
 
 
 @Service
@@ -24,6 +25,19 @@ public class QueryServiceImpl implements QueryService {
         Query query = op_query.get();
         query.setIsDeleted(true);
         queryRepository.save(query);
+    }
+
+    @Override
+    public void deleteAllQueries(String login) {
+        Optional<Set<Query>> op_queries = queryRepository.findByUser_Login(login);
+        if (op_queries.isEmpty() || op_queries.get().isEmpty()) {
+            throw new EntityNotFoundException("Queries were not found");
+        }
+        Set<Query> queries = op_queries.get();
+        for (Query query : queries) {
+            query.setIsDeleted(true);
+            queryRepository.save(query);
+        }
     }
 
 }

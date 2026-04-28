@@ -30,7 +30,24 @@ public class QueryController {
             queryService.deleteQuery(queryId, userLogin);
         } catch (EntityNotFoundException e) {
             Log.error("Didn't find the query to delete: " + e.getMessage());
-            ErrorResponse errorResponse = new ErrorResponse("Delete query rror", e.getMessage(), 404);
+            ErrorResponse errorResponse = new ErrorResponse("Delete query error", e.getMessage(), 404);
+            return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body(errorResponse);
+        }
+        return ResponseEntity
+            .status(HttpStatus.NO_CONTENT)
+            .build();
+    }
+
+    @DeleteMapping(value = "/users/{userLogin}/queries/all")
+    public ResponseEntity<?> deleteAllQuery(@PathVariable String userLogin) {
+        Log.info("Received a request to remove all queries: from user: " + userLogin);
+        try {
+            queryService.deleteAllQueries(userLogin);
+        } catch (EntityNotFoundException e) {
+            Log.error("Didn't find queries to delete: " + e.getMessage());
+            ErrorResponse errorResponse = new ErrorResponse("Delete query error", e.getMessage(), 404);
             return ResponseEntity
                     .status(HttpStatus.NOT_FOUND)
                     .body(errorResponse);
