@@ -9,6 +9,8 @@ import org.mockito.ArgumentCaptor;
 import jakarta.persistence.EntityNotFoundException;
 
 import java.util.Optional;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.List;
@@ -103,7 +105,7 @@ class QueryServiceImplTest {
         queries.add(query1);
         queries.add(query2);
         when(mockQueryRepository.findByUser_Login(userLogin))
-                .thenReturn(Optional.of(queries));
+                .thenReturn(queries);
 
         // Act
         queryService.deleteAllQueries(userLogin);
@@ -126,7 +128,7 @@ class QueryServiceImplTest {
         String userLogin = "testUser";
 
         when(mockQueryRepository.findByUser_Login(userLogin))
-                .thenReturn(Optional.empty());
+                .thenReturn(Collections.emptySet());
 
         // Act & Assert
         EntityNotFoundException exception = assertThrows(EntityNotFoundException.class, () ->

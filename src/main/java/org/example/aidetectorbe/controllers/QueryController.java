@@ -20,8 +20,7 @@ import org.example.aidetectorbe.dto.ErrorResponse;
 @AllArgsConstructor
 public class QueryController {
 
-    @Autowired
-    private QueryService queryService;
+    private final QueryService queryService;
 
     @DeleteMapping(value = "/users/{userLogin}/queries/{queryId}")
     public ResponseEntity<?> deleteQuery(@PathVariable Long queryId, @PathVariable String userLogin) {

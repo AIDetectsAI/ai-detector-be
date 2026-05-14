@@ -7,5 +7,5 @@ import java.util.Set;
 
 public interface QueryRepository extends JpaRepository<Query, Long> {
     Optional<Query> findByIdAndUser_Login(Long queryId, String login);
-    Optional<Set<Query>> findByUser_Login(String login);
+    Set<Query> findByUser_Login(String login);
 }
