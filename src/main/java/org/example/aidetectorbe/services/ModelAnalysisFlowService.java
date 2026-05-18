@@ -85,11 +85,6 @@ public class ModelAnalysisFlowService {
                 throw new IllegalArgumentException("File must be an image");
             }
 
-            BufferedImage bufferedImage = ImageIO.read(new ByteArrayInputStream(image.getBytes()));
-            if (bufferedImage == null) {
-                throw new IllegalArgumentException("Provided file was not an image");
-            }
-
             Log.info("Processing image: " + image.getOriginalFilename() + " (" + image.getSize() + " bytes)");
         } catch (IllegalArgumentException e) {
             throw e;

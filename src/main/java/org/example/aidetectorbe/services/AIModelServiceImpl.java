@@ -108,8 +108,20 @@ public class AIModelServiceImpl implements AIModelService {
             }
             
         } catch (HttpClientErrorException e) {
-            Log.error("Client error from AI service: " + e.getMessage());
-            throw new AIServiceException("Invalid request to AI service: " + e.getMessage(), e, e.getStatusCode().value());
+            String errorMessage = "Invalid request to AI service: " + e.getMessage();
+            
+            try {
+                String responseBody = e.getResponseBodyAsString();
+                JsonNode jsonError = objectMapper.readTree(responseBody);
+                if (jsonError.has("detail")) {
+                    errorMessage = jsonError.get("detail").asText();
+                }
+            } catch (Exception ignored) {
+                // ignored because of default message
+            }
+
+            Log.error("Client error from AI service: " + errorMessage);
+            throw new AIServiceException(errorMessage, e, e.getStatusCode().value());
         } catch (HttpServerErrorException e) {
             Log.error("Server error from AI service: " + e.getMessage());
             throw new AIServiceException("AI service is experiencing issues: " + e.getMessage(), e, e.getStatusCode().value());

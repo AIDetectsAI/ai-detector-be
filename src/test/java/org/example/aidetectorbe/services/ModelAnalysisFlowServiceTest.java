@@ -3,6 +3,7 @@ package org.example.aidetectorbe.services;
 import org.example.aidetectorbe.dto.AIModelResponse;
 import org.example.aidetectorbe.entities.ModelResult;
 import org.example.aidetectorbe.entities.User;
+import org.example.aidetectorbe.exceptions.AIServiceException;
 import org.example.aidetectorbe.repository.ModelResultRepository;
 import org.example.aidetectorbe.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -19,6 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -73,6 +75,23 @@ class ModelAnalysisFlowServiceTest {
                 () -> flowService.analyzeAndStore(image, "testUser"));
 
         assertEquals("File must be an image", exception.getMessage());
+    }
+
+    @Test
+    void analyzeAndStore_ShouldPropagateAIServiceException_WhenAiRejectsSpoofedImage() throws Exception {
+        MockMultipartFile spoofedImage = new MockMultipartFile("image", "fake.png", "image/png", "hello world".getBytes());
+        
+        when(aiModelService.processImage(spoofedImage))
+                .thenThrow(new AIServiceException("Provided file was not an image", 400));
+
+        AIServiceException exception = assertThrows(AIServiceException.class,
+                () -> flowService.analyzeAndStore(spoofedImage, "testUser"));
+
+        assertEquals("Provided file was not an image", exception.getMessage());
+        assertEquals(400, exception.getStatusCode());
+
+        verify(modelResultRepository, never()).save(any(ModelResult.class));
+        verify(photoStorageService, never()).storeAndGetPhotoId(any());
     }
 
     @Test
