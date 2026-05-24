@@ -37,17 +37,25 @@ public class UserService {
     }
 
     public boolean verifyUserByLoginAndProvider(UserDTO userDTO, String provider) {
-        User user = userRepository.findByLoginAndProvider(userDTO.getLogin(), provider).orElse(null);
+        return verifyUserByLoginAndProvider(userDTO.getLogin(), userDTO.getPassword(), provider);
+    }
+
+    public boolean verifyUserByLoginAndProvider(String login, String password, String provider) {
+        User user = userRepository.findByLoginAndProvider(login, provider).orElse(null);
         if (user == null) {
             return false;
         }
         if (!user.getProvider().equals(provider)) {
             return false;
         }
-        return passwordHasher.verifyPassword(userDTO.getPassword(), user.getPassword());
+        return passwordHasher.verifyPassword(password, user.getPassword());
     }
 
     public String getTokenByLogin(String login) {
         return jwtUtil.generateToken(login);
+    }
+
+    public User findByLogin(String login) {
+        return userRepository.findByLogin(login).orElse(null);
     }
 }

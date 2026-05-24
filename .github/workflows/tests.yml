@@ -1,0 +1,27 @@
+name: CI Tests
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v6
+
+    - name: Set up JDK 22
+      uses: actions/setup-java@v5
+      with:
+        java-version: '22'
+        distribution: 'temurin'
+        cache: maven
+
+    - name: Ensure mvnw is executable
+      run: chmod +x mvnw
+
+    - name: Run Tests with Maven
+      run: ./mvnw test
