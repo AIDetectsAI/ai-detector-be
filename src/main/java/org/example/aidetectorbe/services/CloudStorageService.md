@@ -2,130 +2,89 @@
 
 ## Opis
 
-`CloudStorageService` to interfejs służący do obsługi przesyłania obrazów do chmury. Pozwala na łatwe przełączanie między różnymi dostawcami chmury (mock, AWS S3) bez zmiany kodu aplikacji.
+`CloudStorageService` to interfejs służący do obsługi przesyłania obrazów do chmury. W obecnej architekturze używamy serwisu **Cloudinary**, który pozwala na darmowe, stabilne i bardzo szybkie hostowanie obrazów.
 
-## Metody
+## Instrukcja krok po kroku: Jak założyć Cloudinary i pobrać klucze
+
+Aby system przesyłania obrazków działał poprawnie na Twoim lokalnym środowisku, potrzebujesz darmowego konta na platformie Cloudinary.
+
+### 1. Rejestracja konta (Darmowe)
+- Wejdź na stronę: **https://cloudinary.com/users/register/free**
+- Załóż konto (możesz użyć swojego adresu e-mail, konta Google lub GitHub).
+- Darmowy plan oferuje 25 GB przestrzeni limitu co miesiąc, co jest więcej niż wystarczające dla Twojego projektu.
+
+### 2. Pobranie danych dostępowych (Credentials)
+- Zaloguj się na nowe konto.
+- Przejdź do głównego panelu (Dashboard).
+- Na górze ekranu (lub w sekcji Getting Started / API Keys) znajdziesz **"Product Environment Credentials"**.
+- Do podłączenia aplikacji potrzebujesz trzech wartości stamtąd:
+  - **Cloud Name** (np. `dxyz1abc2`)
+  - **API Key** (np. `123456789012345`)
+  - **API Secret** (np. `aBcDeFgHiJkLmNoPqRsTuVwXyZ`)
+
+### 3. Konfiguracja w projekcie
+- Przejdź do katalogu beackendu: `ai-detector-be/`.
+- Utwórz plik o nazwie `.env` (w tym samym folderze co `pom.xml`).
+- Wklej do niego dokładnie taki kawałek (podmieniając wartości na własne):
+  ```env
+  CLOUDINARY_CLOUD_NAME=twoja_nazwa_chmury
+  CLOUDINARY_API_KEY=twoj_klucz_api
+  CLOUDINARY_API_SECRET=twoj_sekret_api
+  ```
+*Uwaga: Plik `.env` jest celowo ignorowany przez Git (`.gitignore`). Nigdy nie udostępniaj swoich kluczy do API publicznie w serwisie GitHub!*
+
+## Metody Interfejsu
 
 ### `uploadImage(MultipartFile file, String uniqueFileName)`
 
-Przesyła obraz do chmury i zwraca URL do pliku.
+Przesyła obraz do chmury Cloudinary i zwraca gotowy bezpieczny URL (HTTPS) do pliku.
 
 **Parametry:**
+- `file` - plik obrazu z żądania HTTP (MultipartFile).
+- `uniqueFileName` - unikalna nazwa wygenerowana na podstawie UUID dla obrazka (np. `550e8400-e29b-41d4.jpg`). Cloudinary pozbywa się rozszerzenia po swojej stronie używając samego UUID jako `public_id`.
 
-- `file` - plik obrazu do przesłania (MultipartFile)
-- `uniqueFileName` - unikalna nazwa pliku z rozszerzeniem (np. `550e8400-e29b-41d4.jpg`)
-
-**Zwraca:** String z URL do przesłanego obrazu
-
-**Rzuca:** Exception w przypadku błędu przesyłania
+**Zwraca:** `String` z linkiem URL do obrazu na serwerach Cloudinary.
+**Rzuca:** `Exception`, jeśli operacja nie powiedzie się (np. zły API key, brak sieci).
 
 ## Dostępne Implementacje
 
-### 1. MockCloudStorageServiceImpl (domyślna)
-
-- **Aktywna gdy:** `cloud.provider=mock` lub brak konfiguracji
-- **Zachowanie:** Symuluje przesyłanie (500ms opóźnienie), zwraca dummy URL
-- **URL Format:** `https://mock-cloud-storage.example.com/images/{uniqueFileName}`
-
-### 2. AwsS3CloudStorageServiceImpl
-
-- **Aktywna gdy:** `cloud.provider=aws`
-- **Wymagane parametry:** `cloud.aws.s3.bucket-url`
-- **Status:** Szkielet gotowy na implementację AWS SDK
+### 1. CloudinaryStorageServiceImpl
+- **Aktywna gdy:** `cloud.provider=cloudinary`
+- **Wymagane env vars:**
+  - `CLOUDINARY_CLOUD_NAME`
+  - `CLOUDINARY_API_KEY`
+  - `CLOUDINARY_API_SECRET`
+- **Zachowanie:** Inicjuje klienta za pomocą oficjalnego SDK com.cloudinary. Przesyła plik bezpośrednio do przypisanego w kodzie uniwersalnego folderu `ai-detector/` na chmurze.
 
 ## Konfiguracja w application.properties
 
-### Podstawowa konfiguracja
+W głównym pliku konfiguracyjnym Spring Boot (`application.properties`) połączony jest system wczytywania środowiskowego z użyciem biblioteki `dotenv-java`.
 
 ```properties
-# Wybór dostawcy chmury: "mock" lub "aws"
-cloud.provider=mock
-```
+# Wybór dostawcy chmury
+cloud.provider=cloudinary
 
-### Konfiguracja AWS S3
-
-```properties
-# Przełącz na AWS
-cloud.provider=aws
-
-# URL bucketa S3 (wymagane dla AWS)
-cloud.aws.s3.bucket-url=https://twoj-bucket.s3.us-east-1.amazonaws.com
-```
-
-## Przykłady użycia
-
-### W kontrollerze
-
-```java
-@Autowired
-private CloudStorageService cloudStorageService;
-
-public ResponseEntity<?> uploadImage(MultipartFile image) {
-    // Generuj unikalną nazwę pliku
-    String extension = getFileExtension(image.getOriginalFilename());
-    String uniqueFileName = UUID.randomUUID().toString() + extension;
-
-    // Prześlij do chmury
-    String imageUrl = cloudStorageService.uploadImage(image, uniqueFileName);
-
-    // Użyj URL w odpowiedzi
-    response.setImageUrl(imageUrl);
-    return ResponseEntity.ok(response);
-}
+# Cloudinary Configuration
+cloud.cloudinary.cloud-name=${CLOUDINARY_CLOUD_NAME}
+cloud.cloudinary.api-key=${CLOUDINARY_API_KEY}
+cloud.cloudinary.api-secret=${CLOUDINARY_API_SECRET}
 ```
 
 ## Integracja z AIModelController
 
-Kontroler automatycznie:
+Gdy użytkownik wysyła plik do endpointu `/api/useModel`, kontroler automatycznie:
+1. Generuje unikatową nazwę `UUID` z zachowaniem rozszerzenia.
+2. Zleca przesłanie go do chmury używając `CloudStorageService` i natychmiast dostaje adres publiczny w postaci bezpiecznego URL-a.
+3. Równolegle przesyła obraz do właściwej analizy w serwisie AI (Python).
+4. Buduje odpowiedź i używa repozytorium do zapisania historii (szansa wg modelu, którego modelu użyto) z dołączeniem linku do obrazu z chmury do powiązanej tabeli `results` dla użytkownika.
 
-1. Generuje unikalną nazwę pliku z UUID
-2. Zachowuje oryginalne rozszerzenie (.jpg, .png, etc.)
-3. Przesyła obraz do chmury przed przetwarzaniem AI
-4. Dodaje `imageUrl` do odpowiedzi `AIModelResponse`
-
-### Przykład odpowiedzi z /api/useModel
-
-**Mock Provider:**
+### Przykład ostatecznej odpowiedzi z /api/useModel (JSON)
 
 ```json
 {
   "certainty": 0.85,
   "modelUsed": "AIDetector-v1.0",
   "processingTimeMs": 1250,
-  "imageUrl": "https://mock-cloud-storage.example.com/images/550e8400-e29b-41d4-a716-446655440000.jpg"
-}
-```
-
-**AWS S3 Provider:**
-
-```json
-{
-  "certainty": 0.92,
-  "modelUsed": "AIDetector-v1.0",
-  "processingTimeMs": 987,
-  "imageUrl": "https://twoj-bucket.s3.us-east-1.amazonaws.com/a7f3c8d2-bb45-4e89-9012-3456789abcde.png"
-}
-```
-
-**Struktura imageUrl:**
-
-- **Mock:** `https://mock-cloud-storage.example.com/images/{UUID}.{extension}`
-- **AWS S3:** `{bucket-url}/{UUID}.{extension}`
-
-## Rozszerzanie
-
-Aby dodać nowego dostawcę chmury:
-
-1. Implementuj `CloudStorageService`
-2. Dodaj `@ConditionalOnProperty` z nową wartością
-3. Dodaj odpowiednie parametry do `application.properties`
-
-Przykład:
-
-```java
-@Service
-@ConditionalOnProperty(name = "cloud.provider", havingValue = "gcp")
-public class GoogleCloudStorageServiceImpl implements CloudStorageService {
-    // implementacja
+  "imageUrl": "https://res.cloudinary.com/twoja_chmura/image/upload/v12345/ai-detector/550e8400-e29b-41d4-a716-446655440000.jpg"
 }
 ```
