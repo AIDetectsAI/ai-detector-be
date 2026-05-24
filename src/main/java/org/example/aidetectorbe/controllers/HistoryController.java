@@ -42,7 +42,7 @@ public class HistoryController {
         List<HistoryEntryDTO> history = results.stream()
                 .map(r -> new HistoryEntryDTO(
                         r.getResultId(),
-                        r.getPhotoId(),
+                        r.getPhotoUrl(),
                         r.getModel(),
                         r.getChance(),
                         r.getCreatedAt()))
