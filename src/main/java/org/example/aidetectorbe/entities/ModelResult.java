@@ -27,8 +27,8 @@ public class ModelResult {
     @Column(name = "id")
     private UUID resultId;
 
-    @Column(name = "photo_id", nullable = false)
-    private UUID photoId;
+    @Column(name = "photo_url", nullable = false)
+    private String photoUrl;
 
     @Column(name = "user_id", nullable = false)
     private UUID userId;

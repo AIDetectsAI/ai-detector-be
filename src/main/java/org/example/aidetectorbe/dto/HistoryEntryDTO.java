@@ -11,7 +11,7 @@ import java.util.UUID;
 @AllArgsConstructor
 public class HistoryEntryDTO {
     private UUID id;
-    private UUID photoId;
+    private String photoUrl;
     private String model;
     private BigDecimal chance;
     private Instant createdAt;

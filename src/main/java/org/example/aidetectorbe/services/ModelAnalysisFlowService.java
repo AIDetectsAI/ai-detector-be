@@ -6,6 +6,7 @@ import org.example.aidetectorbe.entities.User;
 import org.example.aidetectorbe.exceptions.AIServiceException;
 import org.example.aidetectorbe.repository.ModelResultRepository;
 import org.example.aidetectorbe.repository.UserRepository;
+import org.example.aidetectorbe.services.CloudStorageService;
 import org.example.aidetectorbe.utils.logger.Log;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -25,19 +26,19 @@ public class ModelAnalysisFlowService {
     private final AIModelService aiModelService;
     private final UserRepository userRepository;
     private final ModelResultRepository modelResultRepository;
-    private final PhotoStorageService photoStorageService;
+    private final CloudStorageService cloudStorageService;
     private final DataSize maxFileSize;
 
     public ModelAnalysisFlowService(
             AIModelService aiModelService,
             UserRepository userRepository,
             ModelResultRepository modelResultRepository,
-            PhotoStorageService photoStorageService,
+            CloudStorageService cloudStorageService,
             @Value("${spring.servlet.multipart.max-file-size:10MB}") DataSize maxFileSize) {
         this.aiModelService = aiModelService;
         this.userRepository = userRepository;
         this.modelResultRepository = modelResultRepository;
-        this.photoStorageService = photoStorageService;
+        this.cloudStorageService = cloudStorageService;
         this.maxFileSize = maxFileSize;
     }
 
@@ -50,21 +51,35 @@ public class ModelAnalysisFlowService {
         User user = userRepository.findByLogin(authenticatedUser)
                 .orElseThrow(() -> new SecurityException("Authenticated user not found"));
 
-        UUID photoId = photoStorageService.storeAndGetPhotoId(image);
+        // Generate a unique file name for storage (UUID with original extension)
+        String originalFilename = image.getOriginalFilename();
+        String extension = "";
+        if (originalFilename != null && originalFilename.contains(".")) {
+            extension = originalFilename.substring(originalFilename.lastIndexOf("."));
+        }
+        String uniqueFileName = UUID.randomUUID().toString() + extension;
+
+        // Upload image to Cloudinary and get the URL
+        String photoUrl;
+        try {
+            photoUrl = cloudStorageService.uploadImage(image, uniqueFileName);
+        } catch (Exception e) {
+            throw new AIServiceException("Failed to upload image to cloud storage", e);
+        }
 
         ModelResult result = new ModelResult();
-        result.setPhotoId(photoId);
+        result.setPhotoUrl(photoUrl);
         result.setUserId(user.getId());
         result.setModel(response.getModelUsed());
         result.setChance(toChance(response.getCertainty()));
         modelResultRepository.save(result);
 
-        Log.info("Stored model analysis result for user " + authenticatedUser + " and photoId " + photoId);
+        Log.info("Stored model analysis result for user " + authenticatedUser + " and photoUrl " + photoUrl);
         return response;
     }
 
     private void validateAuthenticatedUser(String authenticatedUser) {
-        if (authenticatedUser == null || authenticatedUser.isBlank()) {
+        if (authenticatedUser == null || authenticatedUser.trim().isEmpty()) {
             throw new SecurityException("Missing authenticated user");
         }
     }
