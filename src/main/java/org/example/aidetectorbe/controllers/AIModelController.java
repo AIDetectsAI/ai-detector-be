@@ -51,13 +51,13 @@ public class AIModelController {
                     .body(errorResponse);
 
         } catch (AIServiceException e) {
-            Log.error("AI service error: " + e.getMessage());
+            Log.error("AI service error: " + e.getMessage(), e);
             ErrorResponse errorResponse = new ErrorResponse("AI Service Error", e.getMessage(), e.getStatusCode());
             return ResponseEntity
                     .status(HttpStatus.valueOf(e.getStatusCode()))
                     .body(errorResponse);
         } catch (Exception e) {
-            Log.error("Unexpected error processing image: " + e.getMessage());
+            Log.error("Unexpected error processing image", e);
             ErrorResponse errorResponse = new ErrorResponse("Internal Server Error", "Failed to process image", 500);
             return ResponseEntity
                     .status(HttpStatus.INTERNAL_SERVER_ERROR)

@@ -18,10 +18,21 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
 public class ModelAnalysisFlowService {
+
+    private static final Set<String> ACCEPTED_IMAGE_CONTENT_TYPES = Set.of(
+            "image/jpeg",
+            "image/jpg",
+            "image/pjpeg",
+            "image/png",
+            "image/gif",
+            "image/bmp",
+            "image/x-ms-bmp",
+            "image/x-windows-bmp");
 
     private final AIModelService aiModelService;
     private final UserRepository userRepository;
@@ -64,6 +75,16 @@ public class ModelAnalysisFlowService {
         try {
             photoUrl = cloudStorageService.uploadImage(image, uniqueFileName);
         } catch (Exception e) {
+            Log.error(
+                    "Cloud storage upload failed (user=" + authenticatedUser + ", originalFilename=" + originalFilename
+                            + ", contentType=" + image.getContentType() + ", size=" + image.getSize()
+                            + ", uniqueFileName=" + uniqueFileName + ")",
+                    e);
+
+            String details = e.getMessage();
+            if (details != null && !details.isBlank()) {
+                throw new AIServiceException("Failed to upload image to cloud storage: " + details, e);
+            }
             throw new AIServiceException("Failed to upload image to cloud storage", e);
         }
 
@@ -98,6 +119,10 @@ public class ModelAnalysisFlowService {
             String contentType = image.getContentType();
             if (contentType == null || !contentType.startsWith("image/")) {
                 throw new IllegalArgumentException("File must be an image");
+            }
+
+            if (!ACCEPTED_IMAGE_CONTENT_TYPES.contains(contentType)) {
+                throw new IllegalArgumentException("Unsupported image format. Supported formats: JPG, PNG, GIF, BMP");
             }
 
             BufferedImage bufferedImage = ImageIO.read(new ByteArrayInputStream(image.getBytes()));
