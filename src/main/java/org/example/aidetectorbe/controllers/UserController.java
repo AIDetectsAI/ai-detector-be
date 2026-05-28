@@ -2,6 +2,8 @@ package org.example.aidetectorbe.controllers;
 
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
+import org.example.aidetectorbe.dto.ChangePasswordRequest;
+import org.example.aidetectorbe.dto.ErrorResponse;
 import org.example.aidetectorbe.dto.LoginDTO;
 import org.example.aidetectorbe.dto.LoginResponse;
 import org.example.aidetectorbe.dto.UserDTO;
@@ -10,11 +12,14 @@ import org.example.aidetectorbe.services.UserService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import jakarta.persistence.EntityNotFoundException;
 import java.util.UUID;
 import java.util.Map;
 import static org.example.aidetectorbe.utils.Constants.AI_DETECTOR_API_PROVIDER;
@@ -80,5 +85,63 @@ public class UserController {
         return ResponseEntity.ok(Map.of(
                 "login", user.getLogin(),
                 "email", user.getEmail()));
+    }
+
+    @PutMapping("/api/me/password")
+    public ResponseEntity<?> changePassword(
+            @Valid @RequestBody ChangePasswordRequest changePasswordRequest,
+            BindingResult result,
+            jakarta.servlet.http.HttpServletRequest request) {
+        String login = (String) request.getAttribute("login");
+        if (login == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Not authenticated");
+        }
+
+        if (result.hasErrors()) {
+            ErrorResponse errorResponse = new ErrorResponse("Bad Request", "invalid data: " + result.getAllErrors(),
+                    400);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+        }
+
+        try {
+            userService.changePassword(login, changePasswordRequest.getCurrentPassword(),
+                    changePasswordRequest.getNewPassword());
+            Log.info(String.format("Password changed successfully for user '%s'", login));
+            return ResponseEntity.noContent().build();
+        } catch (EntityNotFoundException e) {
+            ErrorResponse errorResponse = new ErrorResponse("Not Found", e.getMessage(), 404);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
+        } catch (SecurityException e) {
+            ErrorResponse errorResponse = new ErrorResponse("Unauthorized", e.getMessage(), 401);
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            ErrorResponse errorResponse = new ErrorResponse("Bad Request", e.getMessage(), 400);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+        } catch (Exception e) {
+            Log.error("Unexpected error while changing password", e);
+            ErrorResponse errorResponse = new ErrorResponse("Internal Server Error", "Failed to change password", 500);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+        }
+    }
+
+    @DeleteMapping("/api/me")
+    public ResponseEntity<?> deleteCurrentUser(jakarta.servlet.http.HttpServletRequest request) {
+        String login = (String) request.getAttribute("login");
+        if (login == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Not authenticated");
+        }
+
+        try {
+            userService.deleteUserByLogin(login);
+            Log.info(String.format("User '%s' has been deleted", login));
+            return ResponseEntity.noContent().build();
+        } catch (EntityNotFoundException e) {
+            ErrorResponse errorResponse = new ErrorResponse("Not Found", e.getMessage(), 404);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
+        } catch (Exception e) {
+            Log.error("Unexpected error while deleting user", e);
+            ErrorResponse errorResponse = new ErrorResponse("Internal Server Error", "Failed to delete account", 500);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+        }
     }
 }

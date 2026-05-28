@@ -1,5 +1,6 @@
 package org.example.aidetectorbe.services;
 
+import jakarta.persistence.EntityNotFoundException;
 import lombok.AllArgsConstructor;
 import org.example.aidetectorbe.dto.UserDTO;
 import org.example.aidetectorbe.entities.Role;
@@ -8,6 +9,8 @@ import org.example.aidetectorbe.repository.RoleRepository;
 import org.example.aidetectorbe.repository.UserRepository;
 import org.example.aidetectorbe.security.JwtUtil;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import java.util.Set;
 import java.util.UUID;
 import static org.example.aidetectorbe.utils.Constants.AI_DETECTOR_API_PROVIDER;
@@ -57,5 +60,29 @@ public class UserService {
 
     public User findByLogin(String login) {
         return userRepository.findByLogin(login).orElse(null);
+    }
+
+    @Transactional
+    public void changePassword(String login, String currentPassword, String newPassword) {
+        User user = userRepository.findByLogin(login)
+                .orElseThrow(() -> new EntityNotFoundException("User not found"));
+
+        if (!AI_DETECTOR_API_PROVIDER.equals(user.getProvider())) {
+            throw new IllegalStateException("Password change is only available for local accounts");
+        }
+
+        if (!passwordHasher.verifyPassword(currentPassword, user.getPassword())) {
+            throw new SecurityException("Invalid current password");
+        }
+
+        user.setPassword(passwordHasher.hashPassword(newPassword));
+        userRepository.save(user);
+    }
+
+    @Transactional
+    public void deleteUserByLogin(String login) {
+        User user = userRepository.findByLogin(login)
+                .orElseThrow(() -> new EntityNotFoundException("User not found"));
+        userRepository.delete(user);
     }
 }
