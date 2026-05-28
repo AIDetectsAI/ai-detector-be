@@ -92,7 +92,7 @@ class ModelAnalysisFlowServiceTest {
         assertEquals(400, exception.getStatusCode());
 
         verify(modelResultRepository, never()).save(any(ModelResult.class));
-        verify(photoStorageService, never()).storeAndGetPhotoId(any());
+        verify(cloudStorageService, never()).uploadImage(any(), any());
     }
 
     @Test
