@@ -45,6 +45,9 @@ public class ModelResult {
     @Column(name = "is_deleted", nullable = false)
     private Boolean isDeleted = false;
 
+    @Column(name = "caption", columnDefinition = "TEXT")
+    private String caption;
+
     @PrePersist
     void prePersist() {
         if (createdAt == null) {

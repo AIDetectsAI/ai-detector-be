@@ -51,7 +51,7 @@ class ModelAnalysisFlowServiceTest {
     @Test
     void analyzeAndStore_ShouldSaveResultAndReturnResponse() throws Exception {
         MockMultipartFile image = new MockMultipartFile("image", "test.png", "image/png", validPngBytes());
-        AIModelResponse aiResponse = new AIModelResponse(0.95, "TestModel", 100L);
+        AIModelResponse aiResponse = new AIModelResponse(0.95, "TestModel", 100L, "test caption");
         String photoUrl = "http://example.com/photo.jpg";
         UUID userId = UUID.randomUUID();
 
@@ -98,7 +98,7 @@ class ModelAnalysisFlowServiceTest {
     @Test
     void analyzeAndStore_ShouldMapCertaintyToPercentageChance() throws Exception {
         MockMultipartFile image = new MockMultipartFile("image", "test.png", "image/png", validPngBytes());
-        AIModelResponse aiResponse = new AIModelResponse(0.91, "TestModel", 100L);
+        AIModelResponse aiResponse = new AIModelResponse(0.91, "TestModel", 100L, "test caption");
         UUID photoId = UUID.randomUUID();
         UUID userId = UUID.randomUUID();
 

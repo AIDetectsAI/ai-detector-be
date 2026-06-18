@@ -49,7 +49,8 @@ public class HistoryController {
                         r.getPhotoUrl(),
                         r.getModel(),
                         r.getChance(),
-                        r.getCreatedAt()))
+                        r.getCreatedAt(),
+                        r.getCaption()))
                 .toList();
 
         Log.info("Returning " + history.size() + " history entries for user " + login);

@@ -15,4 +15,5 @@ public class HistoryEntryDTO {
     private String model;
     private BigDecimal chance;
     private Instant createdAt;
+    private String caption;
 }
