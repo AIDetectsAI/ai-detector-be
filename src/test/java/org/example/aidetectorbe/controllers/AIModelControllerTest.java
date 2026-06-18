@@ -38,7 +38,7 @@ public class AIModelControllerTest {
     public void testUseModel_GivenHappyPath_ShouldReturn200AndJson() throws Exception {
         // given
         MockMultipartFile image = new MockMultipartFile("image", "test.jpg", "image/jpeg", "hello".getBytes());
-        AIModelResponse resp = new AIModelResponse(0.95, "TestModel", 123L);
+        AIModelResponse resp = new AIModelResponse(0.95, "TestModel", 123L, "test caption");
         Mockito.when(modelAnalysisFlowService.analyzeAndStore(any(), eq("testUser"))).thenReturn(resp);
 
         // when

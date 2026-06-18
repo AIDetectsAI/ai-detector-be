@@ -93,6 +93,7 @@ public class ModelAnalysisFlowService {
         result.setUserId(user.getId());
         result.setModel(response.getModelUsed());
         result.setChance(toChance(response.getCertainty()));
+        result.setCaption(response.getCaption());
         modelResultRepository.save(result);
 
         Log.info("Stored model analysis result for user " + authenticatedUser + " and photoUrl " + photoUrl);

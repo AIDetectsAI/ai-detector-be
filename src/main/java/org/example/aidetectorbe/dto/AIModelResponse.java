@@ -12,10 +12,12 @@ public class AIModelResponse {
     private String modelUsed;
     private Long processingTimeMs;
     private String imageUrl;
+    private String caption;
 
-    public AIModelResponse(Double certainty, String modelUsed, Long processingTimeMs) {
+    public AIModelResponse(Double certainty, String modelUsed, Long processingTimeMs, String caption) {
         this.certainty = certainty;
         this.modelUsed = modelUsed;
         this.processingTimeMs = processingTimeMs;
+        this.caption = caption;
     }
 }

@@ -156,6 +156,10 @@ public class AIModelServiceImpl implements AIModelService {
                 jsonResponse.get("certainty").asDouble() :
                 null;
 
+            String caption = jsonResponse.has("caption") ?
+                jsonResponse.get("caption").asText() :
+                null;
+
             long processingTime = System.currentTimeMillis() - startTime;
             
             Log.info("AI service response parsed successfully in " + processingTime + "ms");
@@ -163,7 +167,8 @@ public class AIModelServiceImpl implements AIModelService {
             return new AIModelResponse(
                 certainty,
                 modelName,
-                processingTime
+                processingTime,
+                caption
             );
             
         } catch (Exception e) {
