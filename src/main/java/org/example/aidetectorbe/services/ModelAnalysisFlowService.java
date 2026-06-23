@@ -121,6 +121,15 @@ public class ModelAnalysisFlowService {
                 throw new IllegalArgumentException("File must be an image");
             }
 
+            if (!ACCEPTED_IMAGE_CONTENT_TYPES.contains(contentType)) {
+                throw new IllegalArgumentException("Unsupported image format. Supported formats: JPG, PNG, GIF, BMP");
+            }
+
+            BufferedImage bufferedImage = ImageIO.read(new ByteArrayInputStream(image.getBytes()));
+            if (bufferedImage == null) {
+                throw new IllegalArgumentException("Provided file was not an image");
+            }
+
             Log.info("Processing image: " + image.getOriginalFilename() + " (" + image.getSize() + " bytes)");
         } catch (IllegalArgumentException e) {
             throw e;
